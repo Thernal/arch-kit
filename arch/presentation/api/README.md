@@ -22,9 +22,8 @@ for screens — Compose and `lifecycle-runtime-compose`; `compose-components-res
 
 ```kotlin
 @DependencyGraph(AppScope::class)
-interface AppGraph : ViewModelGraph {                       // Metro's: the ViewModel maps
+interface AppGraph : ViewModelGraph {                       // Metro's: the ViewModel maps and metroViewModelFactory
     val compositionLocals: Set<ProvidedValue<*>>
-    val metroViewModelFactory: MetroViewModelFactory
 }
 
 @Composable
@@ -78,7 +77,7 @@ sealed interface HomeEffect : ViewEffect {
 
 @Inject
 @ViewModelKey(HomeViewModel::class)
-@ContributesIntoMap(AppScope::class)
+@ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())   // several supertypes: name the bound one
 class HomeViewModel(
     override val plugins: PluginRegistry,
     private val loadPosts: LoadPostsUseCase,

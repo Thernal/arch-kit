@@ -26,13 +26,12 @@ Nothing is re-exported: declare what the module's own code uses.
 
 ```kotlin
 @DependencyGraph(AppScope::class)
-interface AppGraph : ViewModelGraph {
+interface AppGraph : ViewModelGraph {                       // declares metroViewModelFactory
     val compositionLocals: Set<ProvidedValue<*>>
-    val metroViewModelFactory: MetroViewModelFactory
 }
 ```
 
-ViewModels: `@Inject @ViewModelKey(X::class) @ContributesIntoMap(AppScope::class) class X(override val plugins: PluginRegistry, …)`.
+ViewModels: `@Inject @ViewModelKey(X::class) @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>()) class X(override val plugins: PluginRegistry, …)` — the explicit `binding` because a ViewModel here also implements the plugin interfaces.
 
 ## Root
 
