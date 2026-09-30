@@ -5,6 +5,8 @@ include the eight modules; provide `kit.yml`'s `requires`: conventions `<alias>.
 `<alias>.compose`, `<alias>.injection`; Compose, lifecycle, coroutines, Metro + metrox-viewmodel(-compose);
 Kotlin 2.4+ (context parameters, no flag).
 
+Without skill-manager, the kit's `README.md` → Installing → *Without it* does the same by hand (copy, rename, provide).
+
 ## Feature module dependencies
 
 ```kotlin
