@@ -1,0 +1,55 @@
+# What an application takes from arch-kit, and how. Read by `skillctl.sh kit …`
+# (the skill-manager skill in github.com/Thernal/knowledge), which parses it with
+# sed and awk — so keep to this shape: `key: value` scalars, `key:` followed by
+# `  - item` lines, `#` comments. No nesting, no quoting, no inline lists.
+
+name: arch-kit
+
+# Rename points, applied to every file taken from here, code and skill alike.
+package: io.thernal.archkit
+module: :arch
+alias: archkit
+
+# Copied into the application and merged on update.
+code:
+  - arch/domain
+  - arch/event/api
+  - arch/event/impl
+  - arch/event/wiring
+  - arch/presentation/api
+  - arch/presentation/impl
+  - arch/presentation/wiring
+  - arch/testing
+
+# The public contract — its source, not its README.
+surface:
+  - arch/domain/src/commonMain
+  - arch/event/api/src
+  - arch/presentation/api/src
+  - arch/testing/src/commonMain
+
+# Installed into the application's skills directory, renamed like the code.
+skill:
+  - skills/arch-kit
+
+# Never copied. A change here is announced on update and read in place.
+docs:
+  - README.md
+  - arch/README.md
+  - arch/domain/README.md
+  - arch/presentation/api/README.md
+  - docs
+
+# What the copied modules expect the application to provide.
+requires:
+  - plugin <alias>.kmp.library — Kotlin Multiplatform library (build-logic/convention: KmpLibraryConventionPlugin)
+  - plugin <alias>.compose — kmp.library + Compose Multiplatform, runtime/foundation/ui as implementation (build-logic/convention: ComposeConventionPlugin)
+  - plugin <alias>.injection — Metro, for the wiring modules (build-logic/convention: InjectionConventionPlugin)
+  - targets android, iosArm64, iosSimulatorArm64 — the same set as the other kits
+  - kotlin 2.4 or later — context parameters without a compiler flag
+  - catalog compose-runtime, compose-foundation, compose-ui, compose-components-resources (compose-multiplatform = 1.12.0)
+  - catalog lifecycle-viewmodel, lifecycle-viewmodel-compose, lifecycle-runtime-compose (androidx-lifecycle = 2.11.0)
+  - catalog kotlinx-coroutines-core, kotlinx-coroutines-test (kotlinx-coroutines = 1.11.0), kotlin-test
+  - catalog metro-runtime, metrox-viewmodel, metrox-viewmodel-compose, plugin metro (metro = 1.4.2)
+  - graph the app graph implements Metro's ViewModelGraph; the root installs LocalMetroViewModelFactory, ComponentLocals(graph's Set<ProvidedValue<*>>), LocalMessageEffectHandler and LocalNavEffectHandler
+  - settings enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS"), and each code part included as a module

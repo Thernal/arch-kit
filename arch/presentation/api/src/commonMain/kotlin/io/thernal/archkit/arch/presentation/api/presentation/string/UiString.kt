@@ -6,6 +6,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import io.thernal.archkit.arch.domain.failure.Failure
 import io.thernal.archkit.arch.domain.failure.FieldError
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -60,6 +61,20 @@ fun UiString.resolve(): String {
             val resolved = parts.map { it.resolve() }
             resolved.joinToString(separator)
         }
+    }
+}
+
+/**
+ * Resolves outside composition — a snackbar host shown from `MessageEffectHandler`, a notification.
+ * [lookup] is the app's `StringLookup` for `Localized` keys (read `LocalStringLookup.current` where it is
+ * installed).
+ */
+suspend fun UiString.load(lookup: StringLookup = StringLookup { null }): String {
+    return when (this) {
+        is UiString.Dynamic -> value
+        is UiString.Resource -> getString(resource = resource, formatArgs = args.toTypedArray())
+        is UiString.Localized -> lookup.find(key) ?: fallback.load(lookup)
+        is UiString.Composite -> parts.map { it.load(lookup) }.joinToString(separator)
     }
 }
 
