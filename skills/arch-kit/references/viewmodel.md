@@ -58,10 +58,12 @@ Split the screen: a stateless `HomeContent(state, callbacks)` previews without a
 - Arguments DI cannot inject:
 
 ```kotlin
-class PostViewModel @AssistedInject constructor(@Assisted val id: String, …) : ViewModel() {
-    @AssistedFactory
-    @ContributesIntoMap(AppScope::class)
-    fun interface Factory : AssistedFactory, ManualViewModelAssistedFactory {   // kit's + Metro's
+@AssistedInject
+class PostViewModel(@Assisted val id: String, …) : ViewModel() {
+    @dev.zacsweers.metro.AssistedFactory
+    @ManualViewModelAssistedFactoryKey(Factory::class)
+    @ContributesIntoMap(AppScope::class, binding = binding<ManualViewModelAssistedFactory>())
+    fun interface Factory : AssistedFactory, ManualViewModelAssistedFactory {   // kit's marker + Metro's
         fun create(id: String): PostViewModel
     }
 }

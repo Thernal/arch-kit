@@ -130,8 +130,20 @@ fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
 
 `createViewModel()` already handles messages and navigation; call `OnEffectUpdate` with a collector for the
 feature's own effects. `componentViewModel(key)` is the same for a ViewModel per component (a card), and
-`createAssistedViewModel<T, Factory> { create(routeArg) }` for one with arguments DI cannot inject — its
-factory implements the kit's `AssistedFactory` and Metro's `ManualViewModelAssistedFactory`.
+`createAssistedViewModel<T, Factory> { create(routeArg) }` for one with arguments DI cannot inject:
+
+```kotlin
+@AssistedInject
+class PostViewModel(@Assisted val id: String, …) : ViewModel() {
+    @dev.zacsweers.metro.AssistedFactory
+    @ManualViewModelAssistedFactoryKey(Factory::class)
+    @ContributesIntoMap(AppScope::class, binding = binding<ManualViewModelAssistedFactory>())
+    fun interface Factory : AssistedFactory, ManualViewModelAssistedFactory {   // kit's marker + Metro's
+        fun create(id: String): PostViewModel
+    }
+}
+val viewModel = createAssistedViewModel<PostViewModel, PostViewModel.Factory> { create(route.id) }
+```
 
 ## Events
 
