@@ -1,7 +1,9 @@
 # Setup
 
-`skillctl.sh kit install arch-kit --package <app package> --module <module path> --alias <plugin alias>`;
-include the eight modules; provide `kit.yml`'s `requires`: conventions `<alias>.kmp.library`,
+`skillctl.sh kit install arch-kit --package <app package> --alias <plugin alias>` — no `--module`: the
+modules land at `core/domain`, `core/event/*`, `core/presentation/*`, `core/testing` (ArenaGo's layout), and
+a different module path makes paths and packages disagree. An app module already at one of those paths (a
+strings module at `core/presentation`) is moved first. Include the eight modules; provide `kit.yml`'s `requires`: conventions `<alias>.kmp.library`,
 `<alias>.compose`, `<alias>.injection`; Compose, lifecycle, coroutines, Metro + metrox-viewmodel(-compose);
 Kotlin 2.4+ (context parameters, no flag).
 
@@ -11,13 +13,13 @@ Without skill-manager, the kit's `README.md` → Installing → *Without it* doe
 
 ```kotlin
 commonMain.dependencies {
-    implementation(projects.arch.presentation.api)
-    implementation(projects.arch.domain)
+    implementation(projects.core.presentation.api)
+    implementation(projects.core.domain)
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.lifecycle.runtime.compose)          // screens
 }
-commonTest.dependencies { implementation(projects.arch.testing) }
+commonTest.dependencies { implementation(projects.core.testing) }
 ```
 
 Nothing is re-exported: declare what the module's own code uses.

@@ -1,6 +1,6 @@
 ---
 name: arch-kit
-description: Writes, reviews and debugs ViewModels, screens, use cases and repositories in Compose Multiplatform apps that use arch-kit (packages io.thernal.archkit.arch.*; StatePlugin, IntentPlugin, EffectPlugin, EventPlugin, StateHandler, IntentHandler, EffectHandler, setState, postIntent, launchEffect, sendMessage, navigation, OnEffectUpdate, createViewModel, ContentState, UiString, FormField, FormRule, FieldValidator, Failure, safeCall, UseCase, FlowUseCase, EventBus, Debouncer, Throttler, runViewModelTest). Use it for any presentation or domain work in such a project, even when arch-kit is not named - a new screen or feature, state and intents, one-off effects, snackbars and navigation from a ViewModel, events between features, loading/error states, error handling and mapping, forms and validation (field, cross-field, server errors), user-facing strings and translations, debounce/throttle, ViewModel creation and assisted arguments, and ViewModel tests; and for errors such as "No ViewModelFactoryRenderer installed", "No StateFactory in the plugin registry" or setState not resolving. Not for projects without arch-kit.
+description: Writes, reviews and debugs ViewModels, screens, use cases and repositories in Compose Multiplatform apps that use arch-kit (packages io.thernal.archkit.core.*; StatePlugin, IntentPlugin, EffectPlugin, EventPlugin, StateHandler, IntentHandler, EffectHandler, setState, postIntent, launchEffect, sendMessage, navigation, OnEffectUpdate, createViewModel, ContentState, UiString, FormField, FormRule, FieldValidator, Failure, safeCall, UseCase, FlowUseCase, EventBus, Debouncer, Throttler, runViewModelTest). Use it for any presentation or domain work in such a project, even when arch-kit is not named - a new screen or feature, state and intents, one-off effects, snackbars and navigation from a ViewModel, events between features, loading/error states, error handling and mapping, forms and validation (field, cross-field, server errors), user-facing strings and translations, debounce/throttle, ViewModel creation and assisted arguments, and ViewModel tests; and for errors such as "No ViewModelFactoryRenderer installed", "No StateFactory in the plugin registry" or setState not resolving. Not for projects without arch-kit.
 ---
 
 # arch-kit
@@ -8,7 +8,7 @@ description: Writes, reviews and debugs ViewModels, screens, use cases and repos
 arch-kit is the architecture of a Compose Multiplatform app: domain building blocks (`Failure`, `safeCall`,
 use cases, `Debouncer`/`Throttler`, `EventBus`) and an MVI runtime for ViewModels (state, intents, effects,
 events, `ContentState`, `UiString`, forms, DI-built ViewModels). Guide: https://github.com/Thernal/arch-kit —
-`arch/presentation/api/README.md`, `arch/domain/README.md`, `arch/README.md` (why).
+`core/presentation/api/README.md`, `core/domain/README.md`, `core/README.md` (why).
 
 ## 1. Orient first
 

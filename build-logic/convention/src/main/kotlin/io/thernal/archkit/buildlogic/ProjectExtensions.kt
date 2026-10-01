@@ -25,7 +25,7 @@ internal fun VersionCatalog.version(alias: String): String {
 private const val DEFAULT_NAMESPACE_PREFIX = "io.thernal.archkit"
 
 /**
- * Derives the Android namespace for a Gradle project path such as `:arch:presentation:impl`. Segments are
+ * Derives the Android namespace for a Gradle project path such as `:core:presentation:impl`. Segments are
  * split on both `:` and `-` so a `arch-kit`-style directory name contributes two package segments,
  * matching the source layout.
  */

@@ -19,7 +19,7 @@ androidx-lifecycle = "2.11.0"
 # KotlinX
 kotlinx-coroutines = "1.11.0"
 
-# Dependency injection — Metro, and its ViewModel integration for arch/presentation/impl.
+# Dependency injection — Metro, and its ViewModel integration for core/presentation/impl.
 metro = "1.4.2"
 
 # Static analysis

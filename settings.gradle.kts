@@ -42,4 +42,4 @@ fun includeModulesUnder(path: String) {
         }
 }
 
-includeModulesUnder("arch")
+includeModulesUnder("core")

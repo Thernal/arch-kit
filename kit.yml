@@ -8,26 +8,26 @@ name: arch-kit
 
 # Rename points, applied to every file taken from here, code and skill alike.
 package: io.thernal.archkit
-module: :arch
+module: :core
 alias: archkit
 
 # Copied into the application and merged on update.
 code:
-  - arch/domain
-  - arch/event/api
-  - arch/event/impl
-  - arch/event/wiring
-  - arch/presentation/api
-  - arch/presentation/impl
-  - arch/presentation/wiring
-  - arch/testing
+  - core/domain
+  - core/event/api
+  - core/event/impl
+  - core/event/wiring
+  - core/presentation/api
+  - core/presentation/impl
+  - core/presentation/wiring
+  - core/testing
 
 # The public contract — its source, not its README.
 surface:
-  - arch/domain/src/commonMain
-  - arch/event/api/src
-  - arch/presentation/api/src
-  - arch/testing/src/commonMain
+  - core/domain/src/commonMain
+  - core/event/api/src
+  - core/presentation/api/src
+  - core/testing/src/commonMain
 
 # Installed into the application's skills directory, renamed like the code.
 skill:
@@ -36,9 +36,9 @@ skill:
 # Never copied. A change here is announced on update and read in place.
 docs:
   - README.md
-  - arch/README.md
-  - arch/domain/README.md
-  - arch/presentation/api/README.md
+  - core/README.md
+  - core/domain/README.md
+  - core/presentation/api/README.md
   - docs
 
 # What the copied modules expect the application to provide.

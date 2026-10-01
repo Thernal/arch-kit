@@ -2,7 +2,7 @@
 
 arch-kit is a **kit**: reusable Compose Multiplatform code that applications copy — renamed into their own
 package — with `skillctl.sh kit install arch-kit` (the skill-manager skill, `Thernal/knowledge`), and later
-merge changes from with `kit update`. What they copy is listed in `kit.yml`: the modules `arch/domain`, `arch/event/api`, `arch/event/impl`, `arch/event/wiring` ….
+merge changes from with `kit update`. What they copy is listed in `kit.yml`: the modules `core/domain`, `core/event/api`, `core/event/impl`, `core/event/wiring` ….
 Everything committed to `main` reaches every app that takes the next update, so this file's first rule is
 about delivery.
 
@@ -35,9 +35,9 @@ about delivery.
 | File | Holds | Update when |
 |---|---|---|
 | `README.md` | what the kit does, its layout, how it is built | anything a user of the kit sees changes |
-| `arch/README.md` | why each part has its shape | a decision or trade-off changes |
-| `arch/domain/README.md` | how to use it, task by task | the contract changes |
-| `arch/presentation/api/README.md` | how to use it, task by task | the contract changes |
+| `core/README.md` | why each part has its shape | a decision or trade-off changes |
+| `core/domain/README.md` | how to use it, task by task | the contract changes |
+| `core/presentation/api/README.md` | how to use it, task by task | the contract changes |
 | `docs/todos/` | open questions, one file each | a question opens or is decided (then delete it) |
 | `skills/arch-kit` | the same for an agent in an app that took the kit | the public surface changes — `kit status` flags a skill older than the surface (LAG) |
 | `kit.yml` | what an app copies and what its build must provide | a module, file part or requirement changes |
