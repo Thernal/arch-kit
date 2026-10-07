@@ -8,6 +8,7 @@ agp = "9.2.1"
 
 # Android SDK
 android-compile-sdk = "37"
+android-target-sdk = "37"
 android-min-sdk = "24"
 
 # Compose Multiplatform
