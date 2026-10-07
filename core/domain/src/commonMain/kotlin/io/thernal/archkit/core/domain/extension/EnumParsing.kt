@@ -1,4 +1,4 @@
-package io.thernal.archkit.core.domain.model
+package io.thernal.archkit.core.domain.extension
 
 import kotlin.enums.enumEntries
 

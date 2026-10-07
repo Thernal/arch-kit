@@ -7,25 +7,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlin.coroutines.cancellation.CancellationException
 
-/** Compile-time proof that a guarded call runs inside `safeCall`; it has no members. */
-interface SafeCallScope
-
-/**
- * Where failures caught by [safeCall] are reported — a crash reporter, a debug console. Set once at
- * startup ([FailureReporting.reporter]); by default nothing is reported.
- */
-fun interface FailureReporter {
-    /** [isUnexpected] is true for anything that was not already a [Failure]. */
-    fun report(
-        error: Throwable,
-        isUnexpected: Boolean,
-    )
-}
-
-object FailureReporting {
-    var reporter: FailureReporter = FailureReporter { _, _ -> }
-}
-
 /**
  * Runs [block] and returns its value as a [Result]: success, or the [Failure] it threw — anything
  * else wrapped with `Failure.of` — after reporting it and handing it to [handleError]. Cancellation
