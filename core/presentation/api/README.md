@@ -1,6 +1,6 @@
 # core/presentation/api
 
-The MVI runtime. Package `io.thernal.archkit.core.presentation.api.presentation`.
+The MVI runtime. Package `io.thernal.archkit.core.presentation.api` — the module is the presentation layer, so no `presentation` package repeats it.
 
 ## Installing
 
@@ -29,7 +29,7 @@ interface AppGraph : ViewModelGraph {                       // Metro's: the View
 @Composable
 fun AppRoot(graph: AppGraph) {
     CompositionLocalProvider(LocalMetroViewModelFactory provides graph.metroViewModelFactory) {
-        ComponentLocals(graph.compositionLocals) {          // includes LocalViewModelFactoryRenderer
+        ContributedLocals(graph.compositionLocals) {          // includes LocalViewModelResolver
             val snackbar = remember { SnackbarHostState() }
             val lookup = LocalStringLookup.current
             val navigator = LocalNavigator.current           // your navigator, e.g. nav-kit's
@@ -42,7 +42,7 @@ fun AppRoot(graph: AppGraph) {
 }
 ```
 
-`PresentationWiring` needs an `EventBus` (`EventWiring`) and contributes the plugin registry.
+`PresentationProvidersModule` needs an `EventBus` (`EventProvidersModule`) and contributes the plugin registry.
 
 ### Navigation — the one-file bridge
 
@@ -129,8 +129,12 @@ fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
 ```
 
 `createViewModel()` already handles messages and navigation; call `OnEffectUpdate` with a collector for the
-feature's own effects. `componentViewModel(key)` is the same for a ViewModel per component (a card), and
-`createAssistedViewModel<T, Factory> { create(routeArg) }` for one with arguments DI cannot inject:
+feature's own effects. `componentViewModel(key)` gives a self-contained, reused component (a post card
+with its own like and share) a ViewModel of its own, scoped to the component rather than the screen:
+created when it enters composition, cleared when it leaves, kept across a rotation — an item scrolled out
+of a lazy list gets a fresh one when it comes back. Everything else on a screen goes through the screen's
+ViewModel. `createAssistedViewModel<T, Factory> { create(routeArg) }` is for one with arguments DI cannot
+inject (`assistedComponentViewModel` the same for a component):
 
 ```kotlin
 @AssistedInject

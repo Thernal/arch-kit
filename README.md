@@ -100,9 +100,9 @@ The same by hand, from a clone of this repository.
 |---|---|---|
 | `core/domain` | `Failure`/`FieldError`/`ResponseStatus`, `safeCall`/`runSafeCall`/`safeCallFlow`, `FailureReporter`, `UseCase`/`SuspendUseCase`/`FlowUseCase`, `Debouncer`, `Throttler`, `asEnum` — pure Kotlin | coroutines |
 | `core/event/{api,impl,wiring}` | `EventBus`, `BaseEvent`; `SharedFlowEventBus`; its binding | coroutines |
-| `core/presentation/api` | contracts, plugins and their DSL, effects, `ContentState`, `UiString`, forms, ViewModel factories, render contracts | domain, event/api, Compose, lifecycle |
-| `core/presentation/impl` | the handlers, the plugin registry, the Metro ViewModel factory | api, metrox-viewmodel |
-| `core/presentation/wiring` | the registry, factories, loggers set, `MetroViewModelFactory`, the renderer local | api, impl |
+| `core/presentation/api` | `plugin` — the registry and the state, intent, effect (with `message`, `navigation`) and event plugins, each with its contract and DSL; `composition` — `ComponentRenderer`, `ContributedLocals`; `viewmodel` — `launch`, `FlowUseCase` calls, and `factory` with `ViewModelResolver` and `createViewModel`; `content` — `ContentState`; `string` — `UiString`; `form` with `validator` and `transformer` | domain, event/api, Compose, lifecycle |
+| `core/presentation/impl` | the default handlers, in the same `plugin` packages; the plugin registry; `MetroViewModelResolver` | api, metrox-viewmodel |
+| `core/presentation/wiring` | the registry, factories, loggers set, `MetroViewModelFactory`, the resolver local | api, impl |
 | `core/testing` | `testPlugins()`, `runViewModelTest`, `recordEffects` | presentation, event |
 
 ## Building
