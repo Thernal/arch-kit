@@ -22,7 +22,7 @@ private data object CartChanged : BaseEvent
 
 class SharedFlowEventBusTest {
     @Test
-    fun anObserverSeesItsTypeAndItsSubtypesOnly() {
+    fun `an observer sees its type and its subtypes only`() {
         runTest {
             val bus = SharedFlowEventBus()
             val session = mutableListOf<SessionEvent>()

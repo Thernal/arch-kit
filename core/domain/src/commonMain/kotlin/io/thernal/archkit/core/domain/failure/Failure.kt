@@ -22,16 +22,3 @@ data class Failure(
         }
     }
 }
-
-/** A backend's complaint about one field of a request. */
-data class FieldError(
-    val field: String,
-    val error: String,
-    val code: Int? = null,
-)
-
-/** A backend's status for the whole request: an application code and its name. */
-data class ResponseStatus(
-    val code: Int = -1,
-    val error: String? = null,
-)

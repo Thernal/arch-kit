@@ -54,6 +54,23 @@ come back for a message.
 ArenaGo kept one flow per event class, created lazily without a lock, so an observer of a supertype never
 saw its subtypes. Here there is one shared flow and each observer filters by type.
 
+## One concept per file, packages by role
+
+Each file holds one type, or one type and the composition local that installs it; a type's
+extensions and its DSL get a file of their own beside it (`StateDsl.kt`, `ContentStateExtensions.kt`),
+so a contract reads without its helpers and a helper is found by name. Packages say what a part is
+for: `plugin` is the machinery, and state, intent, effect and event sit under it as equals, each with
+its own contract (`ViewState` lives with the state plugin, not in a shared `model`). The presentation
+modules are the presentation layer by name, so their packages start right under the module
+(`core.presentation.api.plugin`), never `core.presentation.api.presentation` — the layer Detekt rule
+reads the layer off the module name and reports a repeated one. `composition` holds
+what every feature builds on — `ComponentRenderer` and `ContributedLocals` — and the default handlers
+in `impl` mirror the `plugin` packages one to one.
+
+`ViewModelResolver` is not a renderer: it draws nothing, it hands a composition its ViewModel. The
+`Renderer` suffix is kept for contracts that do draw, which is what lets `ComponentRenderer` mean one
+thing.
+
 ## What changed besides
 
 - `FlowUseCase.execute` and `safeCallFlow` are not `suspend`: a flow is cold, and Detekt is right that a

@@ -1,7 +1,7 @@
-# core/domain and core/event
+# core/domain
 
 Pure Kotlin building blocks for every feature's domain and data layers. Package
-`io.thernal.archkit.core.domain`; the event bus in `io.thernal.archkit.core.event.api.domain`.
+`io.thernal.archkit.core.domain`; the event bus has [its own README](../event/api/README.md).
 
 ## Failure and safeCall
 
@@ -60,12 +60,4 @@ fun onSubmit() = submit { save() }                        // the first; the rest
 
 ## Events between features
 
-```kotlin
-data object SessionExpired : BaseEvent
-
-eventBus.fire(SessionExpired)
-eventBus.observe<SessionExpired>().collect { … }         // subtypes too
-```
-
-Events are not state: fired while nobody observes, they are gone. In a ViewModel use the event plugin
-(`fireEvent`, `observeEvent`) — core/presentation. `EventWiring` binds one `EventBus` per app.
+`EventBus` and `BaseEvent` live in `core/event/api` — see [its README](../event/api/README.md).

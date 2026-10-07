@@ -54,7 +54,8 @@ Split the screen: a stateless `HomeContent(state, callbacks)` previews without a
 
 ## Factories
 
-- `createViewModel<T>()` — the screen's; `componentViewModel<T>(key)` — one per component instance.
+- `createViewModel<T>()` — the screen's; `componentViewModel<T>(key)` / `assistedComponentViewModel` — a
+  self-contained, reused component's own, scoped to the component (cleared when it leaves composition).
 - Arguments DI cannot inject:
 
 ```kotlin

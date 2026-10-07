@@ -2,10 +2,10 @@ package io.thernal.archkit.core.testing
 
 import io.thernal.archkit.core.event.api.domain.EventBus
 import io.thernal.archkit.core.event.impl.domain.SharedFlowEventBus
-import io.thernal.archkit.core.presentation.api.presentation.effect.EffectPlugin
-import io.thernal.archkit.core.presentation.api.presentation.model.BaseEffect
-import io.thernal.archkit.core.presentation.api.presentation.plugin.PluginRegistry
-import io.thernal.archkit.core.presentation.impl.presentation.handler.DefaultPluginRegistry
+import io.thernal.archkit.core.presentation.api.plugin.PluginRegistry
+import io.thernal.archkit.core.presentation.api.plugin.effect.BaseEffect
+import io.thernal.archkit.core.presentation.api.plugin.effect.EffectPlugin
+import io.thernal.archkit.core.presentation.impl.plugin.PluginRegistryImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +20,7 @@ import kotlinx.coroutines.test.setMain
 
 /** The real plugin factories, without DI: what a ViewModel under test takes as its `plugins`. */
 fun testPlugins(eventBus: EventBus = SharedFlowEventBus()): PluginRegistry {
-    return DefaultPluginRegistry.of(eventBus = eventBus)
+    return PluginRegistryImpl.of(eventBus = eventBus)
 }
 
 /**

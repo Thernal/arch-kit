@@ -26,7 +26,7 @@ Nothing is re-exported: declare what the module's own code uses.
 
 ## Graph
 
-`EventWiring`, `PresentationWiring` contribute to `AppScope`. The graph implements Metro's `ViewModelGraph`:
+`EventProvidersModule`, `PresentationProvidersModule` contribute to `AppScope`. The graph implements Metro's `ViewModelGraph`:
 
 ```kotlin
 @DependencyGraph(AppScope::class)
@@ -41,7 +41,7 @@ ViewModels: `@Inject @ViewModelKey(X::class) @ContributesIntoMap(AppScope::class
 
 ```kotlin
 CompositionLocalProvider(LocalMetroViewModelFactory provides graph.metroViewModelFactory) {
-    ComponentLocals(graph.compositionLocals) {
+    ContributedLocals(graph.compositionLocals) {
         val lookup = LocalStringLookup.current
         CompositionLocalProvider(
             LocalMessageEffectHandler provides MessageEffectHandler { snackbar.showSnackbar(it.message.load(lookup)) },
@@ -76,6 +76,6 @@ FailureReporting.reporter = FailureReporter { error, isUnexpected -> crashes.rec
 
 | Error | Cause |
 |---|---|
-| `No ViewModelFactoryRenderer installed` | `ComponentLocals(graph.compositionLocals)` missing at the root, or `PresentationWiring` not in the graph |
-| `No StateFactory in the plugin registry` | a hand-built registry without the factories — use `DefaultPluginRegistry.of(eventBus)` or the wiring |
+| `No ViewModelResolver installed` | `ContributedLocals(graph.compositionLocals)` missing at the root, or `PresentationProvidersModule` not in the graph |
+| `No StateFactory in the plugin registry` | a hand-built registry without the factories — use `PluginRegistryImpl.of(eventBus)` or the wiring |
 | `setState` / `StateHandler` unresolved | called outside a ViewModel, or the class is not a `PluginContext` (a plugin interface) |

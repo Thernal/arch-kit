@@ -38,6 +38,7 @@ docs:
   - README.md
   - core/README.md
   - core/domain/README.md
+  - core/event/api/README.md
   - core/presentation/api/README.md
   - docs
 
@@ -52,5 +53,5 @@ requires:
   - catalog lifecycle-viewmodel, lifecycle-viewmodel-compose, lifecycle-runtime-compose (androidx-lifecycle = 2.11.0)
   - catalog kotlinx-coroutines-core, kotlinx-coroutines-test (kotlinx-coroutines = 1.11.0), kotlin-test
   - catalog metro-runtime, metrox-viewmodel, metrox-viewmodel-compose, plugin metro (metro = 1.4.2)
-  - graph the app graph implements Metro's ViewModelGraph; the root installs LocalMetroViewModelFactory, ComponentLocals(graph's Set<ProvidedValue<*>>), LocalMessageEffectHandler and LocalNavEffectHandler
+  - graph the app graph implements Metro's ViewModelGraph; the root installs LocalMetroViewModelFactory, ContributedLocals(graph's Set<ProvidedValue<*>>), LocalMessageEffectHandler and LocalNavEffectHandler
   - settings enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS"), and each code part included as a module

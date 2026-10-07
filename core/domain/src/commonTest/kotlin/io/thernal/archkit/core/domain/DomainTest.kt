@@ -2,9 +2,9 @@ package io.thernal.archkit.core.domain
 
 import io.thernal.archkit.core.domain.concurrent.Debouncer
 import io.thernal.archkit.core.domain.concurrent.Throttler
+import io.thernal.archkit.core.domain.extension.asEnum
 import io.thernal.archkit.core.domain.failure.Failure
 import io.thernal.archkit.core.domain.failure.FieldError
-import io.thernal.archkit.core.domain.model.asEnum
 import io.thernal.archkit.core.domain.safecall.FailureReporter
 import io.thernal.archkit.core.domain.safecall.FailureReporting
 import io.thernal.archkit.core.domain.safecall.safeCall
@@ -38,7 +38,7 @@ class DomainTest {
     }
 
     @Test
-    fun safeCallReturnsFailuresAsTheyAreAndWrapsTheRest() {
+    fun `safeCall returns failures as they are and wraps the rest`() {
         runTest {
             val expected = Failure(errors = listOf(FieldError(field = "email", error = "TAKEN")))
             val handled = mutableListOf<Failure>()
@@ -55,14 +55,14 @@ class DomainTest {
     }
 
     @Test
-    fun safeCallRethrowsCancellation() {
+    fun `safeCall rethrows cancellation`() {
         runTest {
             assertFailsWith<CancellationException> { safeCall<Int> { throw CancellationException("stop") } }
         }
     }
 
     @Test
-    fun safeCallFlowEndsWithTheFailure() {
+    fun `safeCallFlow ends with the failure`() {
         runTest {
             val results = safeCallFlow {
                 flow {
@@ -77,7 +77,7 @@ class DomainTest {
     }
 
     @Test
-    fun theDebouncerRunsOnlyTheLastAction() {
+    fun `the debouncer runs only the last action`() {
         runTest {
             val debouncer = Debouncer(duration = 300.milliseconds, scope = this)
             val ran = mutableListOf<String>()
@@ -90,7 +90,7 @@ class DomainTest {
     }
 
     @Test
-    fun theThrottlerDropsCallsInsideItsWindow() {
+    fun `the throttler drops calls inside its window`() {
         val time = TestTimeSource()
         val throttler = Throttler(duration = 1_000.milliseconds, timeSource = time)
 
@@ -101,7 +101,7 @@ class DomainTest {
     }
 
     @Test
-    fun aStringNamesAnEnumEntry() {
+    fun `a string names an enum entry`() {
         assertEquals(expected = Role.ADMIN, actual = "admin".asEnum<Role>())
         assertEquals(expected = null, actual = "owner".asEnum<Role>())
     }
