@@ -11,7 +11,7 @@ import io.thernal.archkit.core.event.impl.domain.SharedFlowEventBus
 /** The one [EventBus] of the app. */
 @BindingContainer
 @ContributesTo(AppScope::class)
-interface EventWiring {
+interface EventProvidersModule {
     companion object {
         @Provides
         @SingleIn(AppScope::class)
