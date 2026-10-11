@@ -1,6 +1,6 @@
-package io.thernal.archkit.core.presentation.impl.store.settings
+package io.thernal.archkit.core.presentation.api.store.settings
 
-import io.thernal.archkit.core.presentation.impl.store.observer.StoreObserver
+import io.thernal.archkit.core.presentation.api.store.observer.StoreObserver
 
 /**
  * How a store runs, as opposed to what it does — the part an app sets once, for every store, through

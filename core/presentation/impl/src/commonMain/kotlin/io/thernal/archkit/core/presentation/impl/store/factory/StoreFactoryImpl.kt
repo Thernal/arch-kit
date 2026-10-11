@@ -5,7 +5,7 @@ import io.thernal.archkit.core.presentation.api.store.Store
 import io.thernal.archkit.core.presentation.api.store.StoreFactory
 import io.thernal.archkit.core.presentation.api.store.keeper.StateKeeper
 import io.thernal.archkit.core.presentation.impl.store.host.StoreHost
-import io.thernal.archkit.core.presentation.impl.store.settings.StoreSettings
+import io.thernal.archkit.core.presentation.api.store.settings.StoreSettings
 import kotlinx.coroutines.CoroutineScope
 
 /** Hosts every store as a [StoreHost] with the app's [settings]. */

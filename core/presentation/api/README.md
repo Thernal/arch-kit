@@ -262,14 +262,14 @@ assertEquals(listOf(HomeRoute, PostRoute("5")), navigator.stack)    // nav-kit's
 
 Time is the test's: `advance(millis)` moves it. `testStoreFactory()` is the real `StoreFactory` for a
 ViewModel under test, and `runViewModelTest` makes `Dispatchers.Main` — which `viewModelScope` runs on — the
-test's dispatcher. `testStoreFactory(onError = { … })` collects the failures a logic lets escape; by default
+test's dispatcher. `testStoreFactory(StoreSettings(onError = { … }))` collects the failures a logic lets escape; by default
 a failure fails the test.
 
 ## Where things are
 
 `api` holds what a feature calls, implements or extends — a feature module depends on nothing else. `impl` holds
-what only a host needs: `StoreHost` (the class that runs a logic), `StoreFactoryImpl`, `StoreSettings` and
-`StoreObserver` (what the app's graph sets), and the Metro resolver.
+only what runs: `StoreHost` (the class that runs a logic), `StoreFactoryImpl` and the Metro resolver. What an app,
+a test or a feature writes or configures — `StoreSettings`, `StoreObserver`, `Start` included — is `api`.
 
 | Package (under `api`) | Holds |
 |---|---|
@@ -277,6 +277,7 @@ what only a host needs: `StoreHost` (the class that runs a logic), `StoreFactory
 | `store.scope` | `StoreScope` and what a logic does on it: `setState`, `launch`, `observe`, `whileSubscribed`, running a `FlowUseCase` |
 | `store.state` | `Partial`, `mapState` (the screen sees a mapped state) |
 | `store.keeper` | `StateKeeper`: a draft that survives the process being killed |
+| `store.settings`, `store.observer` | `StoreSettings` (`start`, `onError`, `observers`), `Start`; `StoreObserver` — what an app's graph or a test sets and implements |
 | `logic` | `Logic` |
 | `logic.action` | `ActionLogic`, `Policy` — level 2 |
 | `logic.phase` | `whileIn`, `runOn`, `PhaseScope` — level 3 |

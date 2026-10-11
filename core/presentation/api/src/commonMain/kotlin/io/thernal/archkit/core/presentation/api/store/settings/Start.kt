@@ -1,4 +1,4 @@
-package io.thernal.archkit.core.presentation.impl.store.settings
+package io.thernal.archkit.core.presentation.api.store.settings
 
 /** When a store runs its logic's `onStart`. */
 enum class Start {

@@ -79,7 +79,8 @@ does on its store, `store.state` how a state is changed and mapped, `store.keepe
 `logic.action`, `logic.phase`, `logic.slice`, `logic.slot` are the levels; `compose.state`, `compose.effect`
 and `compose.item` are the screen's three concerns). `api` holds what a feature calls, implements or extends
 — a feature module depends on nothing else — and `impl` what only a host needs: `StoreHost`, the one class
-that runs a logic, the `StoreSettings` and `StoreObserver` the app's graph sets, and the Metro resolver. A class
+that runs a logic, `StoreFactoryImpl` and the Metro resolver. The rule: contracts, interfaces and configuration a feature, a test or the
+app's graph writes (`Store`, `StoreFactory`, `StoreSettings`, `StoreObserver`) are `api`; only what runs is `impl`. A class
 a feature extends or constructs (`ActionLogic`, `Slice`, `Slot`) has to be in `api` with its machinery, because
 a feature cannot reach `impl`; Kotlin `internal` keeps that machinery (`ActionRunner`, `ChildScope`) out of
 sight. The presentation modules are the presentation layer by name, so their packages start right under the

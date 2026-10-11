@@ -1,4 +1,4 @@
-package io.thernal.archkit.core.presentation.impl.store.observer
+package io.thernal.archkit.core.presentation.api.store.observer
 
 import io.thernal.archkit.core.presentation.api.store.state.Partial
 

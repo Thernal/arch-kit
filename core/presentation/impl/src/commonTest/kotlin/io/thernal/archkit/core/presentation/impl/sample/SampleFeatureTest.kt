@@ -32,6 +32,7 @@ import io.thernal.archkit.core.presentation.api.store.scope.launch
 import io.thernal.archkit.core.presentation.api.store.scope.observe
 import io.thernal.archkit.core.presentation.api.store.scope.setState
 import io.thernal.archkit.core.presentation.api.store.store
+import io.thernal.archkit.core.presentation.api.store.settings.StoreSettings
 import io.thernal.archkit.core.presentation.api.string.UiString
 import io.thernal.archkit.core.presentation.api.string.toUiString
 import io.thernal.archkit.core.presentation.api.viewmodel.coroutine.launch
@@ -255,7 +256,7 @@ class SampleFeatureTest {
     fun `an intent that throws is reported and the store keeps working`() = runViewModelTest {
         val reported = mutableListOf<Throwable>()
         val viewModel = SignUpViewModel(
-            storeFactory = testStoreFactory(onError = { error -> reported += error }),
+            storeFactory = testStoreFactory(StoreSettings(onError = { error -> reported += error })),
             bus = SharedFlowEventBus(),
             signUp = { },
         )

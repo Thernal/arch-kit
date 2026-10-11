@@ -17,8 +17,8 @@ import io.thernal.archkit.core.domain.safecall.FailureReporting
 import io.thernal.archkit.core.presentation.api.store.StoreFactory
 import io.thernal.archkit.core.presentation.api.viewmodel.resolver.LocalViewModelResolver
 import io.thernal.archkit.core.presentation.impl.store.factory.StoreFactoryImpl
-import io.thernal.archkit.core.presentation.impl.store.observer.StoreObserver
-import io.thernal.archkit.core.presentation.impl.store.settings.StoreSettings
+import io.thernal.archkit.core.presentation.api.store.observer.StoreObserver
+import io.thernal.archkit.core.presentation.api.store.settings.StoreSettings
 import io.thernal.archkit.core.presentation.impl.viewmodel.resolver.AppViewModelFactory
 import io.thernal.archkit.core.presentation.impl.viewmodel.resolver.MetroViewModelResolver
 import kotlin.reflect.KClass

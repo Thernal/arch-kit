@@ -106,8 +106,8 @@ The same by hand, from a clone of this repository.
 |---|---|---|
 | `core/domain` | `Failure`/`FieldError`/`ResponseStatus`, `safeCall`/`runSafeCall`/`safeCallFlow`, `FailureReporter`, `UseCase`/`SuspendUseCase`/`FlowUseCase`, `Debouncer`, `Throttler`, `asEnum` — pure Kotlin | coroutines |
 | `core/event/{api,impl,wiring}` | `EventBus`, `BaseEvent`; `SharedFlowEventBus`; its binding | coroutines |
-| `core/presentation/api` | what a feature calls or extends: `store` (`Store`, `StoreOwner`, `StoreFactory`; `scope`, `state`, `keeper`), `logic` (`Logic`; `action`, `phase`, `slice`, `slot`), `compose` (`state`, `effect`, `item`), `content` — `ContentState`, `string` — `UiString`, `form` (`field`, `state`, `validator`, `transformer`), `viewmodel` (`creation`, `resolver`, `assisted`, `coroutine`), `composition` | domain, event/api, Compose, lifecycle, serialization |
-| `core/presentation/impl` | what only a host needs: `store.host` — `StoreHost`; `store.factory`; `store.settings` — `StoreSettings`, `Start`; `store.observer` — `StoreObserver`; `viewmodel.resolver` — `MetroViewModelResolver` | api, metrox-viewmodel |
+| `core/presentation/api` | what a feature calls or extends: `store` (`Store`, `StoreOwner`, `StoreFactory`; `scope`, `state`, `keeper`, `settings` — `StoreSettings`, `observer` — `StoreObserver`), `logic` (`Logic`; `action`, `phase`, `slice`, `slot`), `compose` (`state`, `effect`, `item`), `content` — `ContentState`, `string` — `UiString`, `form` (`field`, `state`, `validator`, `transformer`), `viewmodel` (`creation`, `resolver`, `assisted`, `coroutine`), `composition` | domain, event/api, Compose, lifecycle, serialization |
+| `core/presentation/impl` | only what runs: `store.host` — `StoreHost`; `store.factory` — `StoreFactoryImpl`; `viewmodel.resolver` — `MetroViewModelResolver` | api, metrox-viewmodel |
 | `core/presentation/wiring` | the `StoreFactory`, the `StoreObserver` set, `MetroViewModelFactory`, the resolver local | api, impl |
 | `core/testing` | `storeTest { }`, `testStoreFactory()`, `runViewModelTest` | presentation, event |
 
