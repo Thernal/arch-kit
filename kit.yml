@@ -48,7 +48,7 @@ requires:
   - plugin <alias>.compose — kmp.library + Compose Multiplatform, runtime/foundation/ui as implementation (build-logic/convention: ComposeConventionPlugin)
   - plugin <alias>.injection — Metro, for the wiring modules (build-logic/convention: InjectionConventionPlugin)
   - targets android, iosArm64, iosSimulatorArm64 — the same set as the other kits
-  - kotlin 2.4 or later — context parameters without a compiler flag
+  - kotlin 2.4 or later — context parameters and nested type aliases (a logic's `private typealias Scope`) without a compiler flag
   - catalog compose-runtime, compose-foundation, compose-ui, compose-components-resources (compose-multiplatform = 1.12.0)
   - catalog lifecycle-viewmodel, lifecycle-viewmodel-savedstate, lifecycle-viewmodel-compose, lifecycle-runtime-compose (androidx-lifecycle = 2.11.0)
   - catalog kotlinx-serialization-core, kotlinx-serialization-json (kotlinx-serialization = 1.11.0)

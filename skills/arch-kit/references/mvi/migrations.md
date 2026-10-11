@@ -295,9 +295,9 @@ a long draft, a multi-step form, a selection.
 
 1. Write a `@Serializable` type for the part to keep. That is the user's input only: not loaded data, not a
    busy phase.
-2. Write `SavedStateHandle.xKeeper() = keeper(key, serializer, save = { … }, restore = { … })`.
-3. Pass it in the ViewModel: `override val store = store(storeFactory, initial, logic, keeper = savedState.xKeeper())`.
-4. Test the round trip with `storeTest(…, keeper = …)`.
+2. Write `StoreFactory.xKeeper(handle) = keeper(handle, key, serializer, save = { … }, restore = { … })`.
+3. Pass it in the ViewModel: `override val store = store(storeFactory, initial, logic, keeper = storeFactory.xKeeper(savedState))`.
+4. Test the round trip with `storeTest(…, keeper = testStoreFactory().xKeeper(handle))`.
 
 **Remove it** when the state becomes only loaded data, which is fetched again anyway. A saved value that no
 longer decodes after an app update is dropped, so changing the saved type is safe but loses the old value.

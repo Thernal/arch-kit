@@ -662,7 +662,7 @@ ever have is five things:
 |---|---|
 | 1. The logic | injected (or built from injected dependencies) |
 | 2. The initial state | a default (`ReportState()`), or built from an argument (`LikeState(post.isLiked, post.likes)`) |
-| 3. A keeper | built from the `SavedStateHandle` |
+| 3. A keeper | `storeFactory.keeper(handle, …)`, from the `SavedStateHandle` |
 | 4. `StoreFactory` | injected once for the whole app, with its `StoreSettings` |
 | 5. `mapState` | when the logic's state is not what the screen draws ([section 11](#11-internal-state)) |
 
@@ -678,7 +678,7 @@ class CheckoutViewModel(
         factory = storeFactory,            // 4
         initialState = CheckoutState(),    // 2
         logic = logic,
-        keeper = savedState.draftKeeper(), // 3
+        keeper = storeFactory.draftKeeper(savedState), // 3
     ).mapState { it.toUi() }               // 5
 }
 ```

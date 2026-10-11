@@ -15,10 +15,10 @@ sealed interface HomeEffect {
     data class Navigation(val process: Navigator.() -> Unit) : HomeEffect
 }
 
-private typealias Scope = StoreScope<HomeState, HomeEffect>
-
 class HomeLogic(private val bus: EventBus, private val loadPosts: LoadPostsUseCase) :
     Logic<HomeState, HomeIntent, HomeEffect> {
+    private typealias Scope = StoreScope<HomeState, HomeEffect>      // nested: one file may hold several logics
+
     override fun Scope.onStart() {
         observe(bus.observe<PostDeleted>()) { refresh() }
     }
@@ -106,5 +106,5 @@ val viewModel = createAssistedViewModel<PostViewModel, PostViewModel.Factory> { 
 ```
 
 - A draft that survives the process being killed: `store(storeFactory, State(), logic, keeper =
-  handle.keeper("draft", Saved.serializer(), save = { … }, restore = { … }))` — keep what the user would be upset
+  storeFactory.keeper(handle, "draft", Saved.serializer(), save = { … }, restore = { … }))` — keep what the user would be upset
   to lose, never a busy phase or loaded data.

@@ -227,8 +227,9 @@ a socket. Use plain `observe` for what must stay current even off screen: a sess
 
 ## Surviving process death
 
-`SavedStateHandle.keeper(key, serializer, save, restore)` (Decompose's `StateKeeper`, on Jetpack's handle and
-kotlinx-serialization) keeps a part of the state. The store starts from the saved part and saves it again
+`storeFactory.keeper(handle, key, serializer, save, restore)` (Decompose's `StateKeeper`, on Jetpack's handle and
+kotlinx-serialization) keeps a part of the state. A feature sees only the `StateKeeper` interface; the factory
+builds the implementation, and the host saves and restores. The store starts from the saved part and saves it again
 whenever it changes. The first change is written at once, and those that follow within 300 ms are merged into
 one write of the last value, so typing is not encoded on every key:
 

@@ -1167,7 +1167,8 @@ data class SavedDraft(
     val tags: List<String>,
 )
 
-fun SavedStateHandle.draftKeeper() = keeper<CreatePostState, SavedDraft>(
+fun StoreFactory.draftKeeper(handle: SavedStateHandle) = keeper<CreatePostState, SavedDraft>(
+    handle = handle,
     key = "draft",
     serializer = SavedDraft.serializer(),
     save = { state -> SavedDraft(state.body.text, state.poll.isOn, state.poll.options, state.tags.selected) },
@@ -1180,10 +1181,10 @@ fun SavedStateHandle.draftKeeper() = keeper<CreatePostState, SavedDraft>(
     },
 )
 
-class CreatePostViewModel(posts: PostRepository, savedState: SavedStateHandle) :
+class CreatePostViewModel(storeFactory: StoreFactory, posts: PostRepository, savedState: SavedStateHandle) :
     ViewModel(),
     StoreOwner<CreatePostState, CreatePostIntent, CreatePostEffect> {
-    override val store = store(storeFactory, CreatePostState(), CreatePostLogic(posts), keeper = savedState.draftKeeper())
+    override val store = store(storeFactory, CreatePostState(), CreatePostLogic(posts), keeper = storeFactory.draftKeeper(savedState))
 }
 ```
 
@@ -1193,15 +1194,16 @@ class CreatePostViewModel(posts: PostRepository, savedState: SavedStateHandle) :
 @Test
 fun aDraftComesBackAfterTheProcessDies() = runTest {
     val handle = SavedStateHandle()
-    storeTest(CreatePostState(), CreatePostLogic(posts), keeper = handle.draftKeeper()) {
+    val factory = testStoreFactory()
+    storeTest(CreatePostState(), CreatePostLogic(posts), keeper = factory.draftKeeper(handle)) {
         send(CreatePostIntent.Body(BodyIntent.Edit("hello")))
         skipAll()
     }
-    val restored = testStoreFactory().create(
+    val restored = factory.create(
         scope = backgroundScope,
         initialState = CreatePostState(),
         logic = CreatePostLogic(posts),
-        keeper = handle.draftKeeper(),
+        keeper = factory.draftKeeper(handle),
     )
     assertEquals("hello", restored.state.value.body.text)
 }

@@ -11,14 +11,16 @@ DI-built ViewModels.
 ```kotlin
 class ProfileLogic(private val loadProfile: LoadProfileUseCase) :
     Logic<ProfileState, ProfileIntent, ProfileEffect> {
-    override fun StoreScope<ProfileState, ProfileEffect>.onIntent(intent: ProfileIntent) {
+    private typealias Scope = StoreScope<ProfileState, ProfileEffect>
+
+    override fun Scope.onIntent(intent: ProfileIntent) {
         when (intent) {
             ProfileIntent.Refresh -> refresh()
             ProfileIntent.Edit -> emit(ProfileEffect.Navigation { push(EditProfileRoute) })
         }
     }
 
-    private fun StoreScope<ProfileState, ProfileEffect>.refresh() {
+    private fun Scope.refresh() {
         launch {
             setState { copy(profile = profile.reload()) }
             safeCall { loadProfile(Unit) }.onSuccess { setState { copy(profile = ContentState.Success(it)) } }
