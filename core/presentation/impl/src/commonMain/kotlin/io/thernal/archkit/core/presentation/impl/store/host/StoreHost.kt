@@ -12,6 +12,7 @@ import io.thernal.archkit.core.presentation.api.viewmodel.coroutine.launch
 import io.thernal.archkit.core.presentation.api.store.observer.StoreObserver
 import io.thernal.archkit.core.presentation.api.store.settings.Start
 import io.thernal.archkit.core.presentation.api.store.settings.StoreSettings
+import io.thernal.archkit.core.presentation.impl.store.keeper.SavedStateKeeper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -46,7 +47,10 @@ class StoreHost<S, I, E>(
     private val settings: StoreSettings = StoreSettings(),
     keeper: StateKeeper<S>? = null,
 ) : Store<S, I, E> {
-    private val mutableState = MutableStateFlow(keeper?.restore(initialState) ?: initialState)
+    private val kept: SavedStateKeeper<S, *>? = keeper?.let { given ->
+        given as? SavedStateKeeper<S, *> ?: error("A StateKeeper comes from StoreFactory.keeper")
+    }
+    private val mutableState = MutableStateFlow(kept?.restore(initialState) ?: initialState)
     private val effectChannel = Channel<E>(Channel.UNLIMITED)
     private val effectCollector = Mutex()
     private var isStarted = false
@@ -120,7 +124,7 @@ class StoreHost<S, I, E>(
     }
 
     init {
-        keeper?.let { kept -> storeScope.coroutineScope.launch { kept.save(states = mutableState) } }
+        kept?.let { saving -> storeScope.coroutineScope.launch { saving.save(states = mutableState) } }
         if (settings.start == Start.Eagerly) {
             start()
         }

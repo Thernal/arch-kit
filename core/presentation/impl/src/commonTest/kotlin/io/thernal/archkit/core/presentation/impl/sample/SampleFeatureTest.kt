@@ -114,11 +114,13 @@ private class SignUpLogic(
     private val bus: EventBus,
     private val signUp: suspend (String) -> Unit,
 ) : Logic<SignUpState, SignUpIntent, SignUpEffect> {
-    override fun StoreScope<SignUpState, SignUpEffect>.onStart() {
+    private typealias Scope = StoreScope<SignUpState, SignUpEffect>
+
+    override fun Scope.onStart() {
         observe(bus.observe<ProfileSaved>()) { setState { copy(savedElsewhere = savedElsewhere + 1) } }
     }
 
-    override fun StoreScope<SignUpState, SignUpEffect>.onIntent(intent: SignUpIntent) {
+    override fun Scope.onIntent(intent: SignUpIntent) {
         when (intent) {
             is SignUpIntent.EmailChanged -> setState { copy(email = email.update(TextFieldValue(intent.value))) }
 
@@ -135,7 +137,7 @@ private class SignUpLogic(
         }
     }
 
-    private fun StoreScope<SignUpState, SignUpEffect>.submit() {
+    private fun Scope.submit() {
         setState {
             validate(
                 { copy(email = email.validate(), password = password.validate(), repeat = repeat.validate()) },

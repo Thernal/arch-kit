@@ -3,7 +3,6 @@ package io.thernal.archkit.core.presentation.impl.store.host
 import androidx.lifecycle.SavedStateHandle
 import io.thernal.archkit.core.presentation.api.logic.Logic
 import io.thernal.archkit.core.presentation.api.logic.phase.whileIn
-import io.thernal.archkit.core.presentation.api.store.keeper.keeper
 import io.thernal.archkit.core.presentation.api.store.scope.DEFAULT_STOP_TIMEOUT_MILLIS
 import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
 import io.thernal.archkit.core.presentation.api.store.scope.launch
@@ -16,6 +15,7 @@ import io.thernal.archkit.core.presentation.api.viewmodel.coroutine.launch
 import io.thernal.archkit.core.presentation.api.store.observer.StoreObserver
 import io.thernal.archkit.core.presentation.api.store.settings.Start
 import io.thernal.archkit.core.presentation.api.store.settings.StoreSettings
+import io.thernal.archkit.core.testing.testStoreFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -203,7 +203,13 @@ class StoreHostTest {
     @Test
     fun theStoresOwnCollectorsAreNotAScreen() = runTest {
         val handle = SavedStateHandle()
-        val keeper = handle.keeper<Int, Int>("count", Int.serializer(), save = { it }, restore = { this })
+        val keeper = testStoreFactory().keeper<Int, Int>(
+            handle,
+            "count",
+            Int.serializer(),
+            save = { it },
+            restore = { this },
+        )
         val logic = Ticking()
         val store = StoreHost(0, backgroundScope, logic, keeper = keeper)
         store.postIntent(Unit)

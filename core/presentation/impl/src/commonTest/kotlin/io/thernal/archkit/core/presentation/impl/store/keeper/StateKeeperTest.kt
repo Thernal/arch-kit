@@ -3,10 +3,10 @@ package io.thernal.archkit.core.presentation.impl.store.keeper
 import androidx.lifecycle.SavedStateHandle
 import io.thernal.archkit.core.presentation.api.logic.Logic
 import io.thernal.archkit.core.presentation.api.store.keeper.DEFAULT_SAVE_INTERVAL_MILLIS
-import io.thernal.archkit.core.presentation.api.store.keeper.keeper
 import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
 import io.thernal.archkit.core.presentation.api.store.scope.setState
 import io.thernal.archkit.core.presentation.impl.store.host.StoreHost
+import io.thernal.archkit.core.testing.testStoreFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -28,7 +28,8 @@ class StateKeeperTest {
         }
     }
 
-    private fun SavedStateHandle.formKeeper() = keeper<Form, String>(
+    private fun SavedStateHandle.formKeeper() = testStoreFactory().keeper<Form, String>(
+        handle = this,
         key = "form",
         serializer = String.serializer(),
         save = { form -> form.name },

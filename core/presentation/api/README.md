@@ -21,7 +21,7 @@ Nothing is re-exported. A feature module with ViewModels declares, besides `:cor
 `:core:domain` (`Failure`, `safeCall`), `lifecycle-viewmodel` (`ViewModel`), `kotlinx-coroutines-core`, and —
 for screens — Compose and `lifecycle-runtime-compose`; `compose-components-resources` when it uses
 `UiString.Resource`; `:core:event:api` when it uses events; `lifecycle-viewmodel-savedstate` and
-`kotlinx-serialization-core` when it keeps a draft (`StateKeeper`).
+`kotlinx-serialization-core` when it keeps a draft (`StoreFactory.keeper`).
 
 ### The graph and the root
 
@@ -64,9 +64,9 @@ sealed interface HomeEffect {
     data class Navigation(val process: Navigator.() -> Unit) : HomeEffect
 }
 
-private typealias Scope = StoreScope<HomeState, HomeEffect>
-
 class HomeLogic(private val loadPosts: LoadPostsUseCase) : Logic<HomeState, HomeIntent, HomeEffect> {
+    private typealias Scope = StoreScope<HomeState, HomeEffect>     // nested in the logic: one file may hold several
+
     override fun Scope.onIntent(intent: HomeIntent) {
         when (intent) {
             HomeIntent.Refresh -> refresh()
@@ -276,7 +276,7 @@ a test or a feature writes or configures — `StoreSettings`, `StoreObserver`, `
 | `store` | `Store`, `StoreOwner`, `StoreFactory`, `ViewModel.store(…)` — what a screen sees and a ViewModel owns |
 | `store.scope` | `StoreScope` and what a logic does on it: `setState`, `launch`, `observe`, `whileSubscribed`, running a `FlowUseCase` |
 | `store.state` | `Partial`, `mapState` (the screen sees a mapped state) |
-| `store.keeper` | `StateKeeper`: a draft that survives the process being killed |
+| `store.keeper` | `StateKeeper` — an opaque token for a draft that survives the process being killed; `StoreFactory.keeper(handle, …)` builds it, the host saves and restores |
 | `store.settings`, `store.observer` | `StoreSettings` (`start`, `onError`, `observers`), `Start`; `StoreObserver` — what an app's graph or a test sets and implements |
 | `logic` | `Logic` |
 | `logic.action` | `ActionLogic`, `Policy` — level 2 |
