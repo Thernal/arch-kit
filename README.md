@@ -42,7 +42,7 @@ lambda over the app's navigator) and its screen handles them, so the kit names n
 |---|---|
 | this file | what is here and how it is built |
 | [`core/presentation/api/README.md`](core/presentation/api/README.md) | the MVI runtime, forms, strings, ViewModel factories — task by task |
-| [`docs/mvi/`](docs/mvi/README.md) | the architecture: a guide, a cookbook of real cases, migrations between levels, a reference |
+| [`skills/arch-kit/references/mvi/`](skills/arch-kit/references/mvi/README.md) | the architecture: a guide, a cookbook of real cases, migrations between levels, a reference — in the skill, so an agent in an app has them |
 | [`core/domain/README.md`](core/domain/README.md) | `Failure`, `safeCall`, use cases, concurrency helpers, the event bus |
 | [`core/README.md`](core/README.md) | why each part has its shape, and what changed from the apps it came from |
 | [`skills/arch-kit`](skills/arch-kit/SKILL.md) | the same for an agent working in an app that uses the kit |
@@ -106,8 +106,8 @@ The same by hand, from a clone of this repository.
 |---|---|---|
 | `core/domain` | `Failure`/`FieldError`/`ResponseStatus`, `safeCall`/`runSafeCall`/`safeCallFlow`, `FailureReporter`, `UseCase`/`SuspendUseCase`/`FlowUseCase`, `Debouncer`, `Throttler`, `asEnum` — pure Kotlin | coroutines |
 | `core/event/{api,impl,wiring}` | `EventBus`, `BaseEvent`; `SharedFlowEventBus`; its binding | coroutines |
-| `core/presentation/api` | `store` — `Store`, `StoreScope`, `StoreOwner`, `StoreFactory`, `StoreSettings`, `StoreObserver`; `logic` — `Logic`, `ActionLogic` with `Policy`, phases; `slice` — `Slice`, `Slot`; `keeper` — `StateKeeper`; `compose` — `collectAsState`, `CollectEffects`, per-item ViewModels; `composition` — `ComponentRenderer`, `ContributedLocals`; `viewmodel` — `launch`, and `factory` with `ViewModelResolver` and `createViewModel`; `content` — `ContentState`; `string` — `UiString`; `form` with `validator` and `transformer` | domain, event/api, Compose, lifecycle, serialization |
-| `core/presentation/impl` | `StoreHost` and `StoreFactoryImpl`; `MetroViewModelResolver` | api, metrox-viewmodel |
+| `core/presentation/api` | what a feature calls or extends: `store` (`Store`, `StoreOwner`, `StoreFactory`; `scope`, `state`, `keeper`), `logic` (`Logic`; `action`, `phase`, `slice`, `slot`), `compose` (`state`, `effect`, `item`), `content` — `ContentState`, `string` — `UiString`, `form` (`field`, `state`, `validator`, `transformer`), `viewmodel` (`creation`, `resolver`, `assisted`, `coroutine`), `composition` | domain, event/api, Compose, lifecycle, serialization |
+| `core/presentation/impl` | what only a host needs: `store.host` — `StoreHost`; `store.factory`; `store.settings` — `StoreSettings`, `Start`; `store.observer` — `StoreObserver`; `viewmodel.resolver` — `MetroViewModelResolver` | api, metrox-viewmodel |
 | `core/presentation/wiring` | the `StoreFactory`, the `StoreObserver` set, `MetroViewModelFactory`, the resolver local | api, impl |
 | `core/testing` | `storeTest { }`, `testStoreFactory()`, `runViewModelTest` | presentation, event |
 

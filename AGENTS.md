@@ -42,6 +42,7 @@ about delivery.
 | `core/presentation/api/README.md` | how to use it, task by task | the contract changes |
 | `docs/todos/` | open questions, one file each | a question opens or is decided (then delete it) |
 | `skills/arch-kit` | the same for an agent in an app that took the kit | the public surface changes — `kit status` flags a skill older than the surface (LAG) |
+| `skills/arch-kit/references/mvi/` | the architecture — guide, cookbook, migrations, reference — inside the skill, so an agent in an app has the level rules | a rule, a level line or a case changes |
 | `kit.yml` | what an app copies and what its build must provide | a module, file part or requirement changes |
 
 The skill's frontmatter has to load in Claude Code and in Codex alike (knowledge `docs/SKILLS.md`): a

@@ -25,8 +25,8 @@ only when it crosses a measurable line. The screen never sees the move.
   a use case. A logic moves between hosts unchanged.
 
 The code: the runtime is `core/presentation/api` (the contracts and everything a logic uses) and
-`core/presentation/impl` (`StoreHost`, the class that runs a logic); the test DSL is `core/testing`. The
+`core/presentation/impl` (`StoreHost` — the class that runs a logic — and the settings); the test DSL is `core/testing`. The
 architecture was worked out in the cmplayground repository (branch `feat/mvi-patterns-v3`), where each level
 has a sample with tests. **Messages and navigation are not part of the runtime:** a feature declares them in
-its own effect type and its screen handles them ([API README](../../core/presentation/api/README.md#messages-and-navigation)).
+its own effect type and its screen handles them ([viewmodel.md](../viewmodel.md)).
 In the snippets, `safeCall` is the kit's (`core/domain`): a `Result` whose failure is a reported `Failure`.

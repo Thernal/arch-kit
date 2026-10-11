@@ -15,5 +15,6 @@ arch-kit/
     ├── viewmodel.md            logics, stores, effects (messages and navigation included), events, screens, factories
     ├── domain.md               Failure, safeCall, use cases, Debouncer/Throttler, EventBus, mapping errors
     ├── forms-and-strings.md    ContentState, UiString, validators, transformers, FormRule, server errors
-    └── testing.md              storeTest, testStoreFactory, runViewModelTest
+    ├── testing.md              storeTest, testStoreFactory, runViewModelTest
+    └── mvi/                    the architecture: guide (rules, checklist), cookbook (18 cases), migrations (levels up and down), reference
 ```
