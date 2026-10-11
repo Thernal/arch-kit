@@ -36,11 +36,11 @@ optional — call the repository.
 
 ## Events between features
 
-`data object SessionExpired : BaseEvent`; in a ViewModel `fireEvent(SessionExpired)` /
-`observeEvent<SessionExpired> { }`; elsewhere `eventBus.fire(…)` / `eventBus.observe<T>()`. Observers see
-subtypes. Not state: nobody listening means the event is gone.
+`data object SessionExpired : BaseEvent`; in a logic, `bus.fire(…)` from `launch { }` and
+`observe(bus.observe<SessionExpired>()) { … }` in `onStart`; elsewhere `eventBus.fire(…)` /
+`eventBus.observe<T>()`. Observers see subtypes. Not state: nobody listening means the event is gone.
 
 ## Debouncer / Throttler
 
-`Debouncer(300.milliseconds, viewModelScope)` — the last call of a burst; `Throttler(1.seconds)` — the first,
+`Debouncer(300.milliseconds, scope)` — the last call of a burst (in a logic, search as you type is `Policy.Latest` with a `delay` at the start of `process`, and needs no `Debouncer`); `Throttler(1.seconds)` — the first,
 the rest dropped (`tryAcquire()` for the boolean).

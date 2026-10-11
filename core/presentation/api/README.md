@@ -2,6 +2,10 @@
 
 The MVI runtime. Package `io.thernal.archkit.core.presentation.api` — the module is the presentation layer, so no `presentation` package repeats it.
 
+A screen has a **state**, **intents** and **effects**, and one `Logic` class that turns intents into states and
+effects. The ViewModel only owns the `Store` that hosts the logic. This page is the kit's API, task by task;
+the architecture itself — levels, rules, cookbook, migrations — is in [`docs/mvi/`](../../../docs/mvi/README.md).
+
 ## Installing
 
 | Module | Who depends on it |
@@ -16,7 +20,8 @@ The MVI runtime. Package `io.thernal.archkit.core.presentation.api` — the modu
 Nothing is re-exported. A feature module with ViewModels declares, besides `:core:presentation:api`:
 `:core:domain` (`Failure`, `safeCall`), `lifecycle-viewmodel` (`ViewModel`), `kotlinx-coroutines-core`, and —
 for screens — Compose and `lifecycle-runtime-compose`; `compose-components-resources` when it uses
-`UiString.Resource`; `:core:event:api` when it uses events.
+`UiString.Resource`; `:core:event:api` when it uses events; `lifecycle-viewmodel-savedstate` and
+`kotlinx-serialization-core` when it keeps a draft (`StateKeeper`).
 
 ### The graph and the root
 
@@ -30,115 +35,114 @@ interface AppGraph : ViewModelGraph {                       // Metro's: the View
 fun AppRoot(graph: AppGraph) {
     CompositionLocalProvider(LocalMetroViewModelFactory provides graph.metroViewModelFactory) {
         ContributedLocals(graph.compositionLocals) {          // includes LocalViewModelResolver
-            val snackbar = remember { SnackbarHostState() }
-            val lookup = LocalStringLookup.current
-            val navigator = LocalNavigator.current           // your navigator, e.g. nav-kit's
-            CompositionLocalProvider(
-                LocalMessageEffectHandler provides MessageEffectHandler { snackbar.showSnackbar(it.message.load(lookup)) },
-                LocalNavEffectHandler provides remember(navigator) { navEffectHandler(navigator) },
-            ) { App() }
+            App()
         }
     }
 }
 ```
 
-`PresentationProvidersModule` needs an `EventBus` (`EventProvidersModule`) and contributes the plugin registry.
+`PresentationProvidersModule` contributes the `StoreFactory` every ViewModel takes. Failures that escape a
+logic go to `FailureReporting`; contribute a `StoreObserver` into the graph's set (`@Provides @IntoSet`) to see
+every intent, state change and effect — a debug console, analytics.
 
-### Navigation — the one-file bridge
+The kit installs nothing for messages or navigation. A snackbar host and a navigator are the screen's, or the
+app's own composition locals: see [Messages and navigation](#messages-and-navigation).
 
-The kit's `NavEffect<N>` is generic; name your navigator once:
-
-```kotlin
-// app/.../NavigationBridge.kt — with nav-kit's Navigator
-context(_: ViewModel, plugin: EffectPlugin<*>)
-fun navigation(command: Navigator.() -> Unit) {
-    navigation<Navigator>(command)
-}
-
-@Suppress("UNCHECKED_CAST")
-fun navEffectHandler(navigator: Navigator): NavEffectHandler {
-    return NavEffectHandler { effect -> (effect as NavEffect<Navigator>).command(navigator) }
-}
-```
-
-## A ViewModel
+## A feature
 
 ```kotlin
-data class HomeState(val posts: ContentState<List<Post>> = ContentState.Idle) : ViewState
+data class HomeState(val posts: ContentState<List<Post>> = ContentState.Idle)
 
-sealed interface HomeIntent : ViewIntent {
+sealed interface HomeIntent {
     data object Refresh : HomeIntent
     data class Open(val id: String) : HomeIntent
 }
 
-sealed interface HomeEffect : ViewEffect {
+sealed interface HomeEffect {
     data class Share(val url: String) : HomeEffect
+    data class Message(val message: UiString) : HomeEffect                // the feature's own, see below
+    data class Navigation(val process: Navigator.() -> Unit) : HomeEffect
+}
+
+private typealias Scope = StoreScope<HomeState, HomeEffect>
+
+class HomeLogic(private val loadPosts: LoadPostsUseCase) : Logic<HomeState, HomeIntent, HomeEffect> {
+    override fun Scope.onIntent(intent: HomeIntent) {
+        when (intent) {
+            HomeIntent.Refresh -> refresh()
+            is HomeIntent.Open -> emit(HomeEffect.Navigation { push(PostRoute(intent.id)) })
+        }
+    }
+
+    private fun Scope.refresh() {
+        launch {
+            setState { copy(posts = posts.reload()) }
+            safeCall { loadPosts(Unit) }
+                .onSuccess { posts -> setState { copy(posts = ContentState.Success(posts)) } }
+                .onFailure { failure -> emit(HomeEffect.Message(failure.toUiString())) }
+        }
+    }
 }
 
 @Inject
 @ViewModelKey(HomeViewModel::class)
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())   // several supertypes: name the bound one
 class HomeViewModel(
-    override val plugins: PluginRegistry,
-    private val loadPosts: LoadPostsUseCase,
-) : ViewModel(), StatePlugin<HomeState>, IntentPlugin<HomeIntent>, EffectPlugin<HomeEffect> {
-    override val stateHandler = StateHandler { HomeState() }
-    override val effectHandler = EffectHandler<HomeEffect>()
-    override val intentHandler = IntentHandler<HomeIntent> { intent ->
-        when (intent) {
-            HomeIntent.Refresh -> refresh()
-            is HomeIntent.Open -> navigation { push(PostRoute(intent.id)) }
-        }
-    }
-
-    private fun refresh() {
-        launch {
-            setState { copy(posts = posts.reload()) }
-            safeCall { loadPosts(Unit) }                      // a failure becomes an error message
-                .onSuccess { posts -> setState { copy(posts = ContentState.Success(posts)) } }
-        }
-    }
+    storeFactory: StoreFactory,
+    loadPosts: LoadPostsUseCase,
+) : ViewModel(), StoreOwner<HomeState, HomeIntent, HomeEffect> {
+    override val store = store(storeFactory, HomeState(), HomeLogic(loadPosts))
 }
 ```
 
-| Call (inside the ViewModel) | Does |
+| Call (inside a `Logic`, on `StoreScope`) | Does |
 |---|---|
 | `setState { copy(…) }`, `state` | replace / read the state |
-| `postIntent(intent)` | from the screen: queue an intent; they run in order |
-| `launchEffect(effect)` | a feature effect, delivered once |
-| `sendMessage(UiString \| Failure, type)` | a `MessageEffect` |
-| `navigation<N> { … }` | a `NavEffect` for the screen's navigator |
-| `launch { }` | `viewModelScope.launch` that reports and shows an escaped exception |
-| `safeCall { }` (effect plugin) | `safeCall` whose failure is shown as an error message |
+| `emit(effect)` | an effect, delivered once to one collector |
+| `launch { }` | work that dies with the store; the store is busy while it runs (`Store.isBusy`) |
+| `observe(flow) { }` | a source outside the screen, collected while the store lives — a session, an event bus |
+| `whileSubscribed { }` | work that runs only while the screen is visible |
+| `safeCall { }` (domain) | a `Result` with a `Failure`, reported; cancellation is rethrown |
 | `useCase(params)` | a `FlowUseCase` as `Flow<Result<T>>` |
 
-These compile only inside a ViewModel.
+A `Logic` is a plain class: no ViewModel, no Android, no Compose. It is tested alone, and it can be hosted as
+a `Slice` of a bigger screen or a `Slot` (a dialog) unchanged. A screen that outgrows `setState`-and-`launch`
+moves up the levels — `ActionLogic` with keyed `Policy`s for overlapping work, phases with `whileIn`/`runOn`
+for exclusive modes, `Slice` for parts that change for different reasons — and the screen never notices.
+[`docs/mvi/guide.md`](../../../docs/mvi/guide.md) says when.
 
 ## The screen
 
 ```kotlin
 @Composable
 fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
-    val state by viewModel.collectAsState()
-    val posts by viewModel.collectAsState { it.posts }          // recomposes only when posts change
-    viewModel.OnEffectUpdate<HomeEffect> { effect ->
-        when (effect) { is HomeEffect.Share -> share(effect.url) }
+    val store = viewModel.store
+    val state by store.collectAsState()
+    val posts by state.select { it.posts }                      // recomposes only when posts change
+    store.CollectEffects { effect ->
+        when (effect) {
+            is HomeEffect.Share -> share(effect.url)
+            is HomeEffect.Message -> snackbar.showSnackbar(effect.message.load(lookup))
+            is HomeEffect.Navigation -> effect.process(navigator)
+        }
     }
-    // viewModel.postIntent(HomeIntent.Refresh) …
+    // store.postIntent(HomeIntent.Refresh) …
 }
 ```
 
-`createViewModel()` already handles messages and navigation; call `OnEffectUpdate` with a collector for the
-feature's own effects. `componentViewModel(key)` gives a self-contained, reused component (a post card
-with its own like and share) a ViewModel of its own, scoped to the component rather than the screen:
-created when it enters composition, cleared when it leaves, kept across a rotation — an item scrolled out
-of a lazy list gets a fresh one when it comes back. Everything else on a screen goes through the screen's
-ViewModel. `createAssistedViewModel<T, Factory> { create(routeArg) }` is for one with arguments DI cannot
-inject (`assistedComponentViewModel` the same for a component):
+`CollectEffects` hands each effect to the block once, on `Dispatchers.Main.immediate`; an effect emitted while
+nothing collects waits for the next collector. Only one collector at a time: a second fails at once.
+
+`componentViewModel(key)` gives a self-contained, reused component (a post card with its own like and share) a
+ViewModel of its own, scoped to the component rather than the screen: created when it enters composition,
+cleared when it leaves, kept across a rotation. In a lazy list, `rememberItemViewModels` and `ItemScope`
+keep an item's ViewModel after it scrolls away for as long as its work runs (`isBusy`) — a like being sent is
+not cancelled by a scroll. `createAssistedViewModel<T, Factory> { create(routeArg) }` is for one with
+arguments DI cannot inject (`assistedComponentViewModel` the same for a component):
 
 ```kotlin
 @AssistedInject
-class PostViewModel(@Assisted val id: String, …) : ViewModel() {
+class PostViewModel(@Assisted val id: String, storeFactory: StoreFactory, …) : ViewModel(), StoreOwner<…> {
     @dev.zacsweers.metro.AssistedFactory
     @ManualViewModelAssistedFactoryKey(Factory::class)
     @ContributesIntoMap(AppScope::class, binding = binding<ManualViewModelAssistedFactory>())
@@ -149,20 +153,43 @@ class PostViewModel(@Assisted val id: String, …) : ViewModel() {
 val viewModel = createAssistedViewModel<PostViewModel, PostViewModel.Factory> { create(route.id) }
 ```
 
+## Messages and navigation
+
+The kit has no message effect and no navigation effect, and no handlers for them. A feature declares what it
+sends in its own effect type, as `HomeEffect.Message` and `HomeEffect.Navigation` above, and its screen
+handles them where the snackbar host and the navigator are. Nothing about a design system or a navigator
+reaches the kit, and a ViewModel's effect type says everything it can ask of its screen.
+
+- **Message:** a `UiString` — resolve it where it is drawn (`resolve()` in Compose, `load(lookup)` in a
+  snackbar callback).
+- **Navigation:** a lambda over the app's navigator, so the feature writes `push(route)` as it would
+  anywhere, and the screen runs it: `effect.process(navigator)`. The lambda is not comparable, so a test runs
+  it against a real or fake navigator and asserts on the navigator (below).
+
+An app that wants the same two handled the same way in every screen writes one composable for it, in its own
+code, and calls it from `CollectEffects`.
+
 ## Events
 
 ```kotlin
-class CartViewModel(override val plugins: PluginRegistry) : ViewModel(), EventPlugin {
-    override val eventHandler = EventHandler()
-    init { observeEvent<SessionExpired> { clear() } }
-    fun checkout() { fireEvent(CartChanged) }
+class CartLogic(private val bus: EventBus) : Logic<CartState, CartIntent, Nothing> {
+    override fun StoreScope<CartState, Nothing>.onStart() {
+        observe(bus.observe<SessionExpired>()) { setState { CartState() } }
+    }
+
+    override fun StoreScope<CartState, Nothing>.onIntent(intent: CartIntent) {
+        when (intent) {
+            CartIntent.Checkout -> launch { bus.fire(CartChanged) }
+        }
+    }
 }
 ```
 
 ## ContentState
 
 `Idle`, `Loading(mock)`, `Success(data)`, `Error(failure)`. `dataOrNull()`, `isLoading`/`isSuccess`/…,
-`map { }`, `reload()` (loading, keeping what is shown), `Result.toContentState()`.
+`map { }`, `reload()` (loading, keeping what is shown), `Result.toContentState()`. One per independently
+loaded part of a screen: a profile's header and its posts load, fail and retry on their own.
 
 ## UiString
 
@@ -203,25 +230,46 @@ one. Validators: `RequiredValidator`, `RequiredStringValidator`, `MinLengthValid
 `PasswordValidator`, `UsernameValidator`, `RepeatValidator`; transformers: `MaxLengthTransformer`,
 `TrimStartTransformer`, `FilterTransformer`.
 
-## Logging
-
-Contribute a `PresentationLogger` into the graph's set (`@Provides @IntoSet`): every state change, intent,
-effect and event goes through it — a debug console, in non-production builds.
-
 ## Testing
+
+A `Logic` is tested with no ViewModel, through `storeTest` from `:core:testing`. It records every state change
+and every effect in order; a state is asserted as the change from the one before, and a change the test did
+not expect fails it.
 
 ```kotlin
 @Test
-fun refreshShowsPosts() = runViewModelTest {
-    val viewModel = HomeViewModel(plugins = testPlugins(), loadPosts = FakeLoadPosts(posts))
-    val effects = viewModel.recordEffects(backgroundScope)
-
-    viewModel.postIntent(HomeIntent.Refresh)
-    testScheduler.advanceUntilIdle()
-
-    assertEquals(ContentState.Success(posts), viewModel.state.posts)
+fun refreshShowsPosts() = runTest {
+    storeTest(HomeState(), HomeLogic(FakeLoadPosts(posts))) {
+        send(HomeIntent.Refresh)
+        expectState { copy(posts = ContentState.Loading()) }
+        expectState { copy(posts = ContentState.Success(posts)) }
+    }
 }
 ```
 
-`testPlugins()` gives the real handlers without DI; `runViewModelTest` makes `Dispatchers.Main` the test's
-dispatcher; `recordEffects` collects what the ViewModel sends.
+A navigation effect is a lambda: take it with `nextEffect()`, run it on a navigator and assert on the navigator.
+
+```kotlin
+send(HomeIntent.Open("5"))
+val effect = nextEffect() as HomeEffect.Navigation
+effect.process(navigator)
+assertEquals(listOf(HomeRoute, PostRoute("5")), navigator.stack)    // nav-kit's, or a fake
+```
+
+Time is the test's: `advance(millis)` moves it. `testStoreFactory()` is the real `StoreFactory` for a
+ViewModel under test, and `runViewModelTest` makes `Dispatchers.Main` — which `viewModelScope` runs on — the
+test's dispatcher. `StoreSettings(onError = …)` in a test collects the failures a logic lets escape; by default
+a failure fails the test.
+
+## Where things are
+
+| Package | Holds |
+|---|---|
+| `store` | `Store`, `StoreScope` and its `setState`/`launch`/`observe`, `StoreOwner`, `StoreFactory`, `StoreSettings`, `StoreObserver`, `Partial` |
+| `logic` | `Logic`; `logic.action` — `ActionLogic`, `Policy`; `logic.phase` — `whileIn`, `runOn` |
+| `slice` | `Slice`, `Slot`, `Hosted` |
+| `keeper` | `StateKeeper`: a draft that survives the process being killed |
+| `compose` | `collectAsState`, `CollectEffects`, `select`, `ItemViewModels` |
+| `content`, `string`, `form` | `ContentState`, `UiString`, forms with validators and transformers |
+| `viewmodel` | `launch` for a ViewModel's own work, and `viewmodel.factory` — `createViewModel` and the resolver |
+| `composition` | `ComponentRenderer`, `ContributedLocals` |

@@ -2,34 +2,39 @@
 
 The architecture every feature of a Compose Multiplatform app (android, iosArm64, iosSimulatorArm64) is
 built on: domain building blocks — `Failure`, `safeCall`, use cases, `Debouncer`/`Throttler` — an event bus
-between features, and an MVI runtime for ViewModels: state, intents, one-off effects, events, `ContentState`
-for remote data, `UiString` for every text, forms with field and form-level rules, and DI-built ViewModels.
+between features, and an MVI runtime for ViewModels: a screen's behaviour is one plain `Logic` that turns
+intents into states and effects, hosted by a `Store` the ViewModel owns, moving up four levels (direct
+changes, keyed actions, phases, slices) only when the screen outgrows the one it is at. Besides it
+`ContentState` for remote data, `UiString` for every text, forms with field and form-level rules, and
+DI-built ViewModels.
 
 ```kotlin
-class ProfileViewModel(
-    override val plugins: PluginRegistry,
-    private val loadProfile: LoadProfileUseCase,
-) : ViewModel(), StatePlugin<ProfileState>, IntentPlugin<ProfileIntent>, EffectPlugin<ProfileEffect> {
-    override val stateHandler = StateHandler { ProfileState() }
-    override val effectHandler = EffectHandler<ProfileEffect>()
-    override val intentHandler = IntentHandler<ProfileIntent> { intent ->
+class ProfileLogic(private val loadProfile: LoadProfileUseCase) :
+    Logic<ProfileState, ProfileIntent, ProfileEffect> {
+    override fun StoreScope<ProfileState, ProfileEffect>.onIntent(intent: ProfileIntent) {
         when (intent) {
             ProfileIntent.Refresh -> refresh()
-            ProfileIntent.Edit -> navigation<Navigator> { push(EditProfileRoute) }
+            ProfileIntent.Edit -> emit(ProfileEffect.Navigation { push(EditProfileRoute) })
         }
     }
 
-    private fun refresh() {
+    private fun StoreScope<ProfileState, ProfileEffect>.refresh() {
         launch {
             setState { copy(profile = profile.reload()) }
             safeCall { loadProfile(Unit) }.onSuccess { setState { copy(profile = ContentState.Success(it)) } }
         }
     }
 }
+
+class ProfileViewModel(storeFactory: StoreFactory, loadProfile: LoadProfileUseCase) :
+    ViewModel(), StoreOwner<ProfileState, ProfileIntent, ProfileEffect> {
+    override val store = store(storeFactory, ProfileState(), ProfileLogic(loadProfile))
+}
 ```
 
-`setState`, `launchEffect`, `sendMessage`, `navigation` and the handler builders compile only inside a
-ViewModel — Kotlin context parameters, no compiler flag.
+A `Logic` is a plain class — no ViewModel, no Android — so it is tested alone with `storeTest`. Messages and
+navigation are not the kit's: a feature declares them in its own effect type (`ProfileEffect.Navigation` holds a
+lambda over the app's navigator) and its screen handles them, so the kit names no design system and no navigator.
 
 ## Documentation
 
@@ -37,6 +42,7 @@ ViewModel — Kotlin context parameters, no compiler flag.
 |---|---|
 | this file | what is here and how it is built |
 | [`core/presentation/api/README.md`](core/presentation/api/README.md) | the MVI runtime, forms, strings, ViewModel factories — task by task |
+| [`docs/mvi/`](docs/mvi/README.md) | the architecture: a guide, a cookbook of real cases, migrations between levels, a reference |
 | [`core/domain/README.md`](core/domain/README.md) | `Failure`, `safeCall`, use cases, concurrency helpers, the event bus |
 | [`core/README.md`](core/README.md) | why each part has its shape, and what changed from the apps it came from |
 | [`skills/arch-kit`](skills/arch-kit/SKILL.md) | the same for an agent working in an app that uses the kit |
@@ -100,10 +106,10 @@ The same by hand, from a clone of this repository.
 |---|---|---|
 | `core/domain` | `Failure`/`FieldError`/`ResponseStatus`, `safeCall`/`runSafeCall`/`safeCallFlow`, `FailureReporter`, `UseCase`/`SuspendUseCase`/`FlowUseCase`, `Debouncer`, `Throttler`, `asEnum` — pure Kotlin | coroutines |
 | `core/event/{api,impl,wiring}` | `EventBus`, `BaseEvent`; `SharedFlowEventBus`; its binding | coroutines |
-| `core/presentation/api` | `plugin` — the registry and the state, intent, effect (with `message`, `navigation`) and event plugins, each with its contract and DSL; `composition` — `ComponentRenderer`, `ContributedLocals`; `viewmodel` — `launch`, `FlowUseCase` calls, and `factory` with `ViewModelResolver` and `createViewModel`; `content` — `ContentState`; `string` — `UiString`; `form` with `validator` and `transformer` | domain, event/api, Compose, lifecycle |
-| `core/presentation/impl` | the default handlers, in the same `plugin` packages; the plugin registry; `MetroViewModelResolver` | api, metrox-viewmodel |
-| `core/presentation/wiring` | the registry, factories, loggers set, `MetroViewModelFactory`, the resolver local | api, impl |
-| `core/testing` | `testPlugins()`, `runViewModelTest`, `recordEffects` | presentation, event |
+| `core/presentation/api` | `store` — `Store`, `StoreScope`, `StoreOwner`, `StoreFactory`, `StoreSettings`, `StoreObserver`; `logic` — `Logic`, `ActionLogic` with `Policy`, phases; `slice` — `Slice`, `Slot`; `keeper` — `StateKeeper`; `compose` — `collectAsState`, `CollectEffects`, per-item ViewModels; `composition` — `ComponentRenderer`, `ContributedLocals`; `viewmodel` — `launch`, and `factory` with `ViewModelResolver` and `createViewModel`; `content` — `ContentState`; `string` — `UiString`; `form` with `validator` and `transformer` | domain, event/api, Compose, lifecycle, serialization |
+| `core/presentation/impl` | `StoreHost` and `StoreFactoryImpl`; `MetroViewModelResolver` | api, metrox-viewmodel |
+| `core/presentation/wiring` | the `StoreFactory`, the `StoreObserver` set, `MetroViewModelFactory`, the resolver local | api, impl |
+| `core/testing` | `storeTest { }`, `testStoreFactory()`, `runViewModelTest` | presentation, event |
 
 ## Building
 
@@ -112,6 +118,7 @@ The same by hand, from a clone of this repository.
 ```
 
 Every target, tests on the JVM host and the iOS simulator — the domain helpers, the event bus, forms and
-strings, and a sign-up ViewModel driven end to end (state, intents, effects, navigation, events, field and
+strings, the runtime at every level (stores, actions and policies, phases, slices, slots, keepers, per-item
+ViewModels), and a sign-up feature driven end to end (state, intents, effects, navigation, events, field and
 form rules, server field errors, an intent that throws) — and Detekt, which fails on any finding
 (`-PdetektAutoCorrect=true` fixes formatting first). The Gradle daemon runs on JDK 21 (Metro).
