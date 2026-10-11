@@ -130,8 +130,12 @@ fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
 }
 ```
 
-`CollectEffects` hands each effect to the block once, on `Dispatchers.Main.immediate`; an effect emitted while
-nothing collects waits for the next collector. Only one collector at a time: a second fails at once.
+`CollectEffects` hands each effect to the block once, while the screen is `RESUMED` (`minActiveState` changes
+that): an effect emitted while the screen is in the background, or while nothing collects, waits in the store
+and is handled when the screen is back — a screen that is not visible does not navigate or show a message.
+The block runs in a `CoroutineScope`: suspending in it (`showSnackbar`) holds the next effect back, `launch`
+lets it through. Collected on `Dispatchers.Main.immediate`. Only one collector at a time: a second fails at
+once. Without a composition, `store.collectEffects(lifecycle) { }` is the same.
 
 `componentViewModel(key)` gives a self-contained, reused component (a post card with its own like and share) a
 ViewModel of its own, scoped to the component rather than the screen: created when it enters composition,

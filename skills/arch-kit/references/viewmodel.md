@@ -81,7 +81,8 @@ fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
 ```
 
 Split the screen: a stateless `HomeContent(state, callbacks)` previews without a ViewModel.
-`state.select { it.part }` recomposes only for that part.
+`state.select { it.part }` recomposes only for that part. `CollectEffects` runs only while the screen is
+`RESUMED`; its block is a `CoroutineScope` — suspend in it to queue effects, `launch` to not wait.
 
 ## Factories
 

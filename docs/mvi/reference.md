@@ -53,8 +53,11 @@ with `select { }`. When to use it, what it costs, and how to test through it: [g
 
 - **One collector.** Each effect goes to one collector. A second collector at the same time fails at once,
   because two collectors would race for each effect and lose half of them silently.
-- **Never dropped.** An effect emitted while no one collects (the screen is in the background) waits for the
-  next collector.
+- **Never dropped.** An effect emitted while no one collects waits for the next collector.
+- **Only while the screen is resumed.** `CollectEffects` collects while the lifecycle is at least `RESUMED`
+  (`minActiveState`), so a screen in the background does not navigate or show a message; the effect waits in
+  the store and is handled when the screen is back. Its block runs in a `CoroutineScope`: suspending in it
+  holds the next effect back (a snackbar queue), `launch` lets it through.
 - **Handled before the screen can leave.** `CollectEffects` collects on `Dispatchers.Main.immediate`, so an
   effect taken from the store is not lost between the store and the screen.
 
