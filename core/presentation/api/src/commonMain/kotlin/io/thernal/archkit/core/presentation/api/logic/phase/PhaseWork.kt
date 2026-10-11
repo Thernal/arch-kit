@@ -54,7 +54,7 @@ fun <S : Any, T : S, E> StoreScope<S, E>.whileIn(
                         PhaseScope(
                             store = store,
                             phase = phase,
-                            entered = entered.value
+                            entered = entered.value,
                         ).block(entered.value)
                     }
                 }
