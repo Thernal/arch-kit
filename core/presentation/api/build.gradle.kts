@@ -12,10 +12,18 @@ kotlin {
                 implementation(projects.core.domain)
                 implementation(projects.core.event.api)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.kotlinx.serialization.json)
                 implementation(libs.lifecycle.viewmodel)
+                implementation(libs.lifecycle.viewmodel.savedstate)
                 implementation(libs.lifecycle.viewmodel.compose)
                 implementation(libs.lifecycle.runtime.compose)
                 implementation(libs.compose.components.resources)
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinx.serialization.core)
             }
         }
     }

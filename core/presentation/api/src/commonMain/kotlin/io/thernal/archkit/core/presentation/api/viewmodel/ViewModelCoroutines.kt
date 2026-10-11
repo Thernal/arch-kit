@@ -13,8 +13,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 /**
- * `viewModelScope.launch`, except an uncaught exception is reported and — in an effect plugin — shown
- * to the user as a message instead of crashing the app. Use it instead of the raw scope.
+ * `viewModelScope.launch`, except an uncaught exception is reported to `FailureReporting` instead of
+ * crashing the app. For work a ViewModel does outside its store; a [Logic]'s own `launch` is the store's.
  */
 fun ViewModel.launch(
     context: CoroutineContext = EmptyCoroutineContext,

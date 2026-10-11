@@ -21,6 +21,9 @@ kotlin {
             dependencies {
                 implementation(projects.core.testing)
                 implementation(projects.core.event.impl)
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.lifecycle.viewmodel.savedstate)
+                implementation(libs.lifecycle.viewmodel.compose)
             }
         }
     }

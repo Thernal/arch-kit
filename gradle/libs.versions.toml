@@ -19,6 +19,7 @@ androidx-lifecycle = "2.11.0"
 
 # KotlinX
 kotlinx-coroutines = "1.11.0"
+kotlinx-serialization = "1.11.0"
 
 # Dependency injection — Metro, and its ViewModel integration for core/presentation/impl.
 metro = "1.4.2"
@@ -49,11 +50,15 @@ compose-components-resources = { module = "org.jetbrains.compose.components:comp
 # Lifecycle
 lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+lifecycle-viewmodel-savedstate = { module = "androidx.lifecycle:lifecycle-viewmodel-savedstate", version.ref = "androidx-lifecycle" }
 lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 
 # KotlinX
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 # Dependency injection
 metro-runtime = { module = "dev.zacsweers.metro:runtime", version.ref = "metro" }
