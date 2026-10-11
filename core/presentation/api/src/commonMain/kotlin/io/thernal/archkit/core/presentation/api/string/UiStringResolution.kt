@@ -21,7 +21,7 @@ fun UiString.resolve(): String {
 }
 
 /**
- * Resolves outside composition — a snackbar host shown from `MessageEffectHandler`, a notification.
+ * Resolves outside composition — a snackbar host the app shows, a notification.
  * [lookup] is the app's `StringLookup` for `Localized` keys (read `LocalStringLookup.current` where it is
  * installed).
  */

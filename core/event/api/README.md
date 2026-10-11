@@ -13,21 +13,21 @@ data class CartChanged(val count: Int) : BaseEvent
 
 An event is a fact that happened, named in the past tense. It carries what observers need, nothing more.
 
-## Fire and observe in a ViewModel
+## Fire and observe in a Logic
 
-Through the event plugin (`core/presentation/api`), so the handler runs on the ViewModel's scope and is
-logged:
+A logic takes the `EventBus` in its constructor, observes in `onStart` — on the store's scope, so it stops
+with the ViewModel — and fires from its own work:
 
 ```kotlin
-class CartViewModel(override val plugins: PluginRegistry) : ViewModel(), EventPlugin {
-    override val eventHandler = EventHandler()
-
-    init {
-        observeEvent<SessionExpired> { clear() }
+class CartLogic(private val bus: EventBus) : Logic<CartState, CartIntent, Nothing> {
+    override fun StoreScope<CartState, Nothing>.onStart() {
+        observe(bus.observe<SessionExpired>()) { setState { CartState() } }
     }
 
-    fun checkout() {
-        fireEvent(CartChanged(count = 0))
+    override fun StoreScope<CartState, Nothing>.onIntent(intent: CartIntent) {
+        when (intent) {
+            CartIntent.Checkout -> launch { bus.fire(CartChanged(count = 0)) }
+        }
     }
 }
 ```
@@ -51,5 +51,5 @@ eventBus.observe<SessionExpired>().collect { … }
 
 ## Testing
 
-`testPlugins(eventBus)` (`core/testing`) builds the real handlers on a bus you pass; share one
-`SharedFlowEventBus` between two ViewModels to test one firing and the other observing.
+Share one `SharedFlowEventBus` between two logics hosted with `testStoreFactory()` (`core/testing`) to test one
+firing and the other observing.

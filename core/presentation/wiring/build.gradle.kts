@@ -7,7 +7,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(projects.core.event.api)
+                implementation(projects.core.domain)
                 implementation(projects.core.presentation.api)
                 implementation(projects.core.presentation.impl)
                 implementation(libs.lifecycle.viewmodel)

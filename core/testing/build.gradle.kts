@@ -10,6 +10,7 @@ kotlin {
                 implementation(projects.core.event.impl)
                 implementation(projects.core.presentation.api)
                 implementation(projects.core.presentation.impl)
+                implementation(libs.kotlin.test)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.lifecycle.viewmodel)

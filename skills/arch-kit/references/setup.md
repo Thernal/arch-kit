@@ -35,47 +35,37 @@ interface AppGraph : ViewModelGraph {                       // declares metroVie
 }
 ```
 
-ViewModels: `@Inject @ViewModelKey(X::class) @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>()) class X(override val plugins: PluginRegistry, …)` — the explicit `binding` because a ViewModel here also implements the plugin interfaces.
+ViewModels: `@Inject @ViewModelKey(X::class) @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>()) class X(storeFactory: StoreFactory, …)` — the explicit `binding` because a ViewModel here also implements `StoreOwner`.
 
 ## Root
 
 ```kotlin
 CompositionLocalProvider(LocalMetroViewModelFactory provides graph.metroViewModelFactory) {
-    ContributedLocals(graph.compositionLocals) {
-        val lookup = LocalStringLookup.current
-        CompositionLocalProvider(
-            LocalMessageEffectHandler provides MessageEffectHandler { snackbar.showSnackbar(it.message.load(lookup)) },
-            LocalNavEffectHandler provides remember(navigator) { navEffectHandler(navigator) },
-        ) { App() }
-    }
+    ContributedLocals(graph.compositionLocals) { App() }
 }
 ```
+
+Nothing for messages or navigation: the kit has none. A screen handles its own `Message` and `Navigation`
+effects (see viewmodel.md); an app that wants one shared handler writes a composable of its own and calls it
+from `CollectEffects`.
 
 Key-based translations: `LocalStringLookup provides StringLookup { key -> translations[key] }`.
 
-## Navigation bridge (one file in the app)
-
-```kotlin
-context(_: ViewModel, plugin: EffectPlugin<*>)
-fun navigation(command: Navigator.() -> Unit) {
-    navigation<Navigator>(command)
-}
-
-@Suppress("UNCHECKED_CAST")
-fun navEffectHandler(navigator: Navigator): NavEffectHandler {
-    return NavEffectHandler { effect -> (effect as NavEffect<Navigator>).command(navigator) }
-}
-```
-
-## Reporting and logging
+## Reporting and observing
 
 ```kotlin
 FailureReporting.reporter = FailureReporter { error, isUnexpected -> crashes.record(error, isUnexpected) }   // at startup
-@Provides @IntoSet fun provideConsoleLogger(): PresentationLogger { return PresentationLogger { tag, message, error -> console.log(tag, message, error) } }
+@Provides @IntoSet fun provideConsoleObserver(): StoreObserver = object : StoreObserver {
+    override fun onIntent(intent: Any?) { console.log("intent $intent") }
+    override fun onState(partial: Partial<*>, previous: Any?, state: Any?) { console.log("$partial: $previous -> $state") }
+    override fun onEffect(effect: Any?) { console.log("effect $effect") }
+}
 ```
+
+A failure a logic lets escape goes to `FailureReporting`, and the store keeps working.
 
 | Error | Cause |
 |---|---|
 | `No ViewModelResolver installed` | `ContributedLocals(graph.compositionLocals)` missing at the root, or `PresentationProvidersModule` not in the graph |
-| `No StateFactory in the plugin registry` | a hand-built registry without the factories — use `PluginRegistryImpl.of(eventBus)` or the wiring |
-| `setState` / `StateHandler` unresolved | called outside a ViewModel, or the class is not a `PluginContext` (a plugin interface) |
+| `The effects already have a collector` | `CollectEffects` called twice for one store — collect in one place |
+| `setState` / `emit` unresolved | called outside a `Logic`'s `onStart`/`onIntent` — they are members of `StoreScope` |

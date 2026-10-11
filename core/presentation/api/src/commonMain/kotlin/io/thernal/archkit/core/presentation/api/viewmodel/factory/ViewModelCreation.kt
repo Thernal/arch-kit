@@ -6,30 +6,11 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreOwner
-import io.thernal.archkit.core.presentation.api.plugin.effect.EffectPlugin
-import io.thernal.archkit.core.presentation.api.plugin.effect.OnEffectUpdate
-import io.thernal.archkit.core.presentation.api.plugin.effect.ViewEffect
-import kotlinx.coroutines.CoroutineScope
 
-/** The screen's ViewModel, from the graph; its messages and navigation are handled already. */
+/** The screen's ViewModel, from the graph. */
 @Composable
 inline fun <reified T : ViewModel> createViewModel(key: String? = null): T {
-    val viewModel = LocalViewModelResolver.current.resolve(modelClass = T::class, key = key, owner = screenOwner())
-    if (viewModel is EffectPlugin<*>) {
-        viewModel.OnEffectUpdate()
-    }
-    return viewModel
-}
-
-/** [createViewModel], also handing the feature's own effects to [collector]. */
-@Composable
-inline fun <reified T, reified E : ViewEffect> createViewModel(
-    key: String? = null,
-    noinline collector: suspend CoroutineScope.(E) -> Unit,
-): T where T : ViewModel, T : EffectPlugin<E> {
-    val viewModel = LocalViewModelResolver.current.resolve(modelClass = T::class, key = key, owner = screenOwner())
-    viewModel.OnEffectUpdate(collector = collector)
-    return viewModel
+    return LocalViewModelResolver.current.resolve(modelClass = T::class, key = key, owner = screenOwner())
 }
 
 /** A ViewModel with per-call arguments DI cannot inject (a route parameter), through its [F] factory. */
@@ -55,15 +36,11 @@ inline fun <reified T : ViewModel, reified F : AssistedFactory> createAssistedVi
  */
 @Composable
 inline fun <reified T : ViewModel> componentViewModel(key: String? = null): T {
-    val viewModel = LocalViewModelResolver.current.resolve(
+    return LocalViewModelResolver.current.resolve(
         modelClass = T::class,
         key = key,
         owner = rememberViewModelStoreOwner(),
     )
-    if (viewModel is EffectPlugin<*>) {
-        viewModel.OnEffectUpdate()
-    }
-    return viewModel
 }
 
 /** [componentViewModel] for a component whose ViewModel takes arguments (the post it shows). */
@@ -72,17 +49,13 @@ inline fun <reified T : ViewModel, reified F : AssistedFactory> assistedComponen
     key: String? = null,
     noinline create: F.(CreationExtras) -> T,
 ): T {
-    val viewModel = LocalViewModelResolver.current.resolveAssisted(
+    return LocalViewModelResolver.current.resolveAssisted(
         modelClass = T::class,
         factoryClass = F::class,
         key = key,
         owner = rememberViewModelStoreOwner(),
         create = create,
     )
-    if (viewModel is EffectPlugin<*>) {
-        viewModel.OnEffectUpdate()
-    }
-    return viewModel
 }
 
 /** The owner a screen's ViewModels live in: the navigation entry's, from composition. */

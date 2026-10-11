@@ -1,24 +1,25 @@
-# Testing ViewModels
+# Testing logics and ViewModels
 
 ```kotlin
 @Test
-fun submitShowsServerErrors() = runViewModelTest {
-    val viewModel = SignUpViewModel(plugins = testPlugins(), signUp = { throw rejected })
-    val effects = viewModel.recordEffects(backgroundScope)
-
-    viewModel.postIntent(SignUpIntent.EmailChanged("ada@example.com"))
-    viewModel.postIntent(SignUpIntent.Submit)
-    testScheduler.advanceUntilIdle()
-
-    assertNotNull(viewModel.state.email.error)
-    assertIs<MessageEffect>(effects.single())
+fun submitShowsServerErrors() = runTest {
+    storeTest(SignUpState(), SignUpLogic(SharedFlowEventBus()) { throw rejected }) {
+        send(SignUpIntent.EmailChanged("ada@example.com"), SignUpIntent.Submit)
+        expectState { copy(email = email.update(TextFieldValue("ada@example.com"))) }
+        expectState { copy(profile = ContentState.Loading()) }
+        assertNotNull(nextState().email.error)
+        assertIs<SignUpEffect.Message>(nextEffect())
+    }
 }
 ```
 
-- `testPlugins(eventBus)` — the real handlers without DI; share one `SharedFlowEventBus` between two
-  ViewModels to test events.
-- `runViewModelTest` — `Dispatchers.Main` (`viewModelScope`) is the test dispatcher; unconfined, so an intent
-  runs as it is posted; `advanceUntilIdle()` for `launch`ed work and delays.
-- `recordEffects(backgroundScope)` — every effect sent from then on.
-- A `NavEffect`: `(effect as NavEffect<Router>).command(fakeRouter)` and assert on the fake.
-- Test the stateless screen content with previews/screenshot tests; the ViewModel with these.
+- `storeTest(initial, logic) { }` records every state change and effect in order. `expectState { copy(…) }` is
+  the change from the state before; `expectEffect(e)`, `nextState()`/`nextEffect()` for assertions that are not
+  equality; `skip`/`skipAll` for what the test does not care about. A change the test did not take fails it.
+- Time is the test's: `advance(millis)`; `send` runs everything due. `subscribe()` is a visible screen.
+- A navigation effect is a lambda: `(nextEffect() as HomeEffect.Navigation).process(navigator)`, then assert on
+  the navigator (nav-kit's real one, or a fake with a list of calls).
+- `testStoreFactory()` — the real `StoreFactory` for a ViewModel under test; `runViewModelTest` makes
+  `Dispatchers.Main`, which `viewModelScope` runs on, the test's dispatcher.
+- Two logics on one `SharedFlowEventBus` test one firing and the other observing.
+- A logic is tested alone; the stateless screen content with previews/screenshot tests.

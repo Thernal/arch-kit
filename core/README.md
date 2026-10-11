@@ -4,34 +4,49 @@ Why the kit has the shape it has. The kit is ArenaGo's `core/domain`, `core/even
 `core/presentation` ported to Compose Multiplatform, with the choices where Act2Act differed decided
 explicitly (epic decisions D40–D44).
 
-## Handlers that only compile in a ViewModel
+## A ViewModel owns a store; behaviour is a plain class
 
-`StateHandler { }`, `IntentHandler { }`, `EffectHandler()`, `EventHandler()`, `setState`, `launchEffect`,
-`sendMessage` and `navigation` take the ViewModel and its `PluginContext` as context parameters. Inside a
-ViewModel both are the implicit `this`, so the calls read like members; anywhere else they do not type-check.
-"State changes only happen in a ViewModel" is a compile error, not a review comment. Context parameters need
-no compiler flag on Kotlin 2.4 — checked on 2.4.10 and 2.4.20, JVM and iOS.
+The first version made a ViewModel implement plugins (`StatePlugin`, `IntentPlugin`, `EffectPlugin`) whose
+handlers compiled only inside it, so "state changes only in a ViewModel" was a compile error. That kept
+every screen's behaviour in a class that needs a ViewModel to run, and gave a big screen nowhere to go
+but a bigger ViewModel. The runtime is now cmplayground's `mvi-patterns-v3`: a `Logic` — a plain class —
+holds all of a screen's behaviour, a `Store` hosts it, and the ViewModel is one line, `StoreOwner` with
+`override val store = store(storeFactory, State(), Logic(...))`.
 
-The handlers come from factories in a `PluginRegistry` the ViewModel is given (`override val plugins`), so
-logging, testing and a future replacement change one binding, not every ViewModel. A new plugin kind is a
-new factory contributed into the registry — nothing in the kit changes.
+The rule survives in a different place. `setState`, `emit`, `launch` and `observe` are members of
+`StoreScope`, which a logic receives only inside `onStart` and `onIntent`: there is no way to change a state
+from a screen, a repository or a test body, and a logic needs no ViewModel to be tested, hosted as a
+`Slice` of a bigger screen, or opened as a `Slot` (a dialog). Four levels — direct changes, keyed
+actions (`ActionLogic` with `Policy`), phases (`whileIn`, `runOn`), slices — let a screen grow without its
+screen code changing; [`docs/mvi/`](../docs/mvi/README.md) has the rules for each move.
 
-## Effects: delivered once, handled by the app
+`StoreFactory` replaces the plugin registry as the one seam: it builds every store with the app's
+`StoreSettings`, so logging (`StoreObserver`), failure reporting and a test's fail-fast default change one
+binding, not every ViewModel.
 
-Intents go through an unbounded channel: one posted before anything collects is not lost, and they run in
-order. Effects go through a buffered channel to exactly one collector: a message is not shown twice after a
-rotation, and one sent while the screen is paused is shown when it resumes (`repeatOnLifecycle(RESUMED)`).
+## Effects: delivered once, and the kit does not know what they are
 
-The kit names no design system and no navigator. `MessageEffect` goes to a `MessageEffectHandler` and
-`NavEffect<N>` to a `NavEffectHandler`, both composition locals the root installs; by default both do
-nothing, so previews compose. `NavEffect` is generic over the navigator type: ArenaGo's `navigation { push() }`
-stays as it was, with nav-kit or any other navigator, through a one-file bridge in the app.
+A store's effects go through an unbounded channel to exactly one collector: an effect is not shown twice
+after a rotation, one emitted while no screen collects waits for the next collector, and a second
+collector fails at once instead of racing the first for half the effects. Intents run in order, on the
+caller's thread.
 
-## Errors never crash the screen
+Messages and navigation are not effects of the kit. The first version shipped `MessageEffect` and
+`NavEffect<N>` and installed handlers for them at the root; that hid a dependency — a ViewModel could
+reach a navigator and a snackbar without its effect type saying so — and made every feature depend on
+types the kit owned. Now a feature declares what it can ask of its screen, `Message(UiString)` and
+`Navigation(process: Navigator.() -> Unit)` beside its own effects, and its screen handles them where the
+snackbar host and the navigator are. The kit names no design system and no navigator, and no handler is
+installed at the root. A navigation lambda is not comparable, so a test runs it on a navigator and asserts
+on the navigator's state.
 
-`ViewModel.launch` and the intent handler catch what escapes a coroutine or an intent, report it to
-`FailureReporting`, and — in an effect plugin — show it as an error message. A forgotten `try` is a message,
-not a crash. `EffectPlugin.safeCall` does the same for one call, and returns the `Result`.
+## Errors do not crash the screen
+
+A failure that escapes a logic — in an intent or in launched work — goes to the store's `onError`, which the
+graph sets to `FailureReporting`, and the store keeps working: a forgotten `try` is a report, not a crash.
+`safeCall` returns a `Result` with a `Failure` and reports it; what the user sees of it is the logic's
+decision, an effect or a `ContentState.Error`. In a test the default is the opposite: `onError` throws, so a
+bug fails the test.
 
 ## Strings are resolved where they are drawn
 
@@ -56,16 +71,16 @@ saw its subtypes. Here there is one shared flow and each observer filters by typ
 
 ## One concept per file, packages by role
 
-Each file holds one type, or one type and the composition local that installs it; a type's
-extensions and its DSL get a file of their own beside it (`StateDsl.kt`, `ContentStateExtensions.kt`),
-so a contract reads without its helpers and a helper is found by name. Packages say what a part is
-for: `plugin` is the machinery, and state, intent, effect and event sit under it as equals, each with
-its own contract (`ViewState` lives with the state plugin, not in a shared `model`). The presentation
+Each file holds one type, or one type and the composition local that installs it; a type's extensions get
+a file of their own beside it (`StoreScopeState.kt`, `ContentStateExtensions.kt`), so a contract reads without
+its helpers and a helper is found by name. Packages say what a part is for: `store` is what a screen sees and
+a logic acts on, `logic` is the levels, `slice` the parts of a screen, `keeper` the draft that survives the
+process, `compose` the screen's side. `api` holds contracts and everything a logic uses; `impl` holds what
+only a host needs — `StoreHost`, the one class that runs a logic — and the Metro resolver. The presentation
 modules are the presentation layer by name, so their packages start right under the module
-(`core.presentation.api.plugin`), never `core.presentation.api.presentation` — the layer Detekt rule
-reads the layer off the module name and reports a repeated one. `composition` holds
-what every feature builds on — `ComponentRenderer` and `ContributedLocals` — and the default handlers
-in `impl` mirror the `plugin` packages one to one.
+(`core.presentation.api.store`), never `core.presentation.api.presentation` — the layer Detekt rule reads
+the layer off the module name and reports a repeated one. `composition` holds what every feature builds
+on — `ComponentRenderer` and `ContributedLocals`.
 
 `ViewModelResolver` is not a renderer: it draws nothing, it hands a composition its ViewModel. The
 `Renderer` suffix is kept for contracts that do draw, which is what lets `ComponentRenderer` mean one
@@ -75,7 +90,7 @@ thing.
 
 - `FlowUseCase.execute` and `safeCallFlow` are not `suspend`: a flow is cold, and Detekt is right that a
   suspending function returning one is a smell.
-- Logging goes to `PresentationLogger`s the app contributes, and failures to a `FailureReporter` — the kit
+- Logging goes to `StoreObserver`s the app contributes, and failures to a `FailureReporter` — the kit
   depends on no console.
 - Paging entities stay with paging-kit; `PreventScreenshot`, list helpers and `NavigationState` (Android- or
   navigator-specific) are not here.
