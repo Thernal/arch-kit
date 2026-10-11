@@ -2,9 +2,9 @@ package io.thernal.archkit.core.presentation.impl.logic.action
 
 import io.thernal.archkit.core.presentation.api.logic.action.ActionLogic
 import io.thernal.archkit.core.presentation.api.logic.action.Policy
-import io.thernal.archkit.core.presentation.api.store.StoreScope
-import io.thernal.archkit.core.presentation.api.store.setState
-import io.thernal.archkit.core.presentation.impl.store.StoreHost
+import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
+import io.thernal.archkit.core.presentation.api.store.scope.setState
+import io.thernal.archkit.core.presentation.impl.store.host.StoreHost
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first

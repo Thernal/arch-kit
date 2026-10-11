@@ -12,29 +12,29 @@ import io.thernal.archkit.core.event.api.domain.observe
 import io.thernal.archkit.core.event.impl.domain.SharedFlowEventBus
 import io.thernal.archkit.core.presentation.api.content.ContentState
 import io.thernal.archkit.core.presentation.api.content.reload
-import io.thernal.archkit.core.presentation.api.form.FormField
-import io.thernal.archkit.core.presentation.api.form.FormRule
-import io.thernal.archkit.core.presentation.api.form.FormState
-import io.thernal.archkit.core.presentation.api.form.TextFormField
-import io.thernal.archkit.core.presentation.api.form.textFormField
-import io.thernal.archkit.core.presentation.api.form.validate
+import io.thernal.archkit.core.presentation.api.form.field.FormField
+import io.thernal.archkit.core.presentation.api.form.field.TextFormField
+import io.thernal.archkit.core.presentation.api.form.field.textFormField
+import io.thernal.archkit.core.presentation.api.form.state.FormRule
+import io.thernal.archkit.core.presentation.api.form.state.FormState
+import io.thernal.archkit.core.presentation.api.form.state.validate
+import io.thernal.archkit.core.presentation.api.form.state.withServerErrors
 import io.thernal.archkit.core.presentation.api.form.validator.EmailValidator
 import io.thernal.archkit.core.presentation.api.form.validator.PasswordValidator
 import io.thernal.archkit.core.presentation.api.form.validator.RequiredStringValidator
 import io.thernal.archkit.core.presentation.api.form.validator.plus
-import io.thernal.archkit.core.presentation.api.form.withServerErrors
 import io.thernal.archkit.core.presentation.api.logic.Logic
 import io.thernal.archkit.core.presentation.api.store.Store
 import io.thernal.archkit.core.presentation.api.store.StoreFactory
 import io.thernal.archkit.core.presentation.api.store.StoreOwner
-import io.thernal.archkit.core.presentation.api.store.StoreScope
-import io.thernal.archkit.core.presentation.api.store.StoreSettings
-import io.thernal.archkit.core.presentation.api.store.launch
-import io.thernal.archkit.core.presentation.api.store.observe
-import io.thernal.archkit.core.presentation.api.store.setState
+import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
+import io.thernal.archkit.core.presentation.api.store.scope.launch
+import io.thernal.archkit.core.presentation.api.store.scope.observe
+import io.thernal.archkit.core.presentation.api.store.scope.setState
 import io.thernal.archkit.core.presentation.api.store.store
 import io.thernal.archkit.core.presentation.api.string.UiString
 import io.thernal.archkit.core.presentation.api.string.toUiString
+import io.thernal.archkit.core.presentation.api.viewmodel.coroutine.launch
 import io.thernal.archkit.core.testing.runViewModelTest
 import io.thernal.archkit.core.testing.storeTest
 import io.thernal.archkit.core.testing.testStoreFactory
@@ -255,7 +255,7 @@ class SampleFeatureTest {
     fun `an intent that throws is reported and the store keeps working`() = runViewModelTest {
         val reported = mutableListOf<Throwable>()
         val viewModel = SignUpViewModel(
-            storeFactory = testStoreFactory(StoreSettings(onError = { error -> reported += error })),
+            storeFactory = testStoreFactory(onError = { error -> reported += error }),
             bus = SharedFlowEventBus(),
             signUp = { },
         )

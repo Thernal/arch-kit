@@ -7,8 +7,9 @@ import io.thernal.archkit.core.presentation.api.content.dataOrNull
 import io.thernal.archkit.core.presentation.api.content.map
 import io.thernal.archkit.core.presentation.api.content.reload
 import io.thernal.archkit.core.presentation.api.content.toContentState
-import io.thernal.archkit.core.presentation.api.form.edit
-import io.thernal.archkit.core.presentation.api.form.textFormField
+import io.thernal.archkit.core.presentation.api.form.field.edit
+import io.thernal.archkit.core.presentation.api.form.field.textFormField
+import io.thernal.archkit.core.presentation.api.form.state.validate
 import io.thernal.archkit.core.presentation.api.form.transformer.FilterTransformer
 import io.thernal.archkit.core.presentation.api.form.transformer.MaxLengthTransformer
 import io.thernal.archkit.core.presentation.api.form.validator.EmailValidator

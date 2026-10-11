@@ -15,12 +15,12 @@ import dev.zacsweers.metrox.viewmodel.ViewModelAssistedFactory
 import io.thernal.archkit.core.domain.failure.Failure
 import io.thernal.archkit.core.domain.safecall.FailureReporting
 import io.thernal.archkit.core.presentation.api.store.StoreFactory
-import io.thernal.archkit.core.presentation.api.store.StoreObserver
-import io.thernal.archkit.core.presentation.api.store.StoreSettings
-import io.thernal.archkit.core.presentation.api.viewmodel.factory.LocalViewModelResolver
-import io.thernal.archkit.core.presentation.impl.store.StoreFactoryImpl
-import io.thernal.archkit.core.presentation.impl.viewmodel.factory.AppViewModelFactory
-import io.thernal.archkit.core.presentation.impl.viewmodel.factory.MetroViewModelResolver
+import io.thernal.archkit.core.presentation.api.viewmodel.resolver.LocalViewModelResolver
+import io.thernal.archkit.core.presentation.impl.store.factory.StoreFactoryImpl
+import io.thernal.archkit.core.presentation.impl.store.observer.StoreObserver
+import io.thernal.archkit.core.presentation.impl.store.settings.StoreSettings
+import io.thernal.archkit.core.presentation.impl.viewmodel.resolver.AppViewModelFactory
+import io.thernal.archkit.core.presentation.impl.viewmodel.resolver.MetroViewModelResolver
 import kotlin.reflect.KClass
 
 private typealias ManualFactories =

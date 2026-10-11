@@ -1,7 +1,7 @@
 package io.thernal.archkit.core.presentation.api.logic
 
-import io.thernal.archkit.core.presentation.api.slice.Slice
-import io.thernal.archkit.core.presentation.api.store.StoreScope
+import io.thernal.archkit.core.presentation.api.logic.slice.Slice
+import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
 
 /**
  * A unit of presentation logic — the one thing every level implements. It does not know who hosts it: a

@@ -4,7 +4,7 @@ The MVI runtime. Package `io.thernal.archkit.core.presentation.api` — the modu
 
 A screen has a **state**, **intents** and **effects**, and one `Logic` class that turns intents into states and
 effects. The ViewModel only owns the `Store` that hosts the logic. This page is the kit's API, task by task;
-the architecture itself — levels, rules, cookbook, migrations — is in [`docs/mvi/`](../../../docs/mvi/README.md).
+the architecture itself — levels, rules, cookbook, migrations — is in [`skills/arch-kit/references/mvi/`](../../../skills/arch-kit/references/mvi/README.md) — in the skill, so an agent working in an app has it.
 
 ## Installing
 
@@ -109,7 +109,7 @@ A `Logic` is a plain class: no ViewModel, no Android, no Compose. It is tested a
 a `Slice` of a bigger screen or a `Slot` (a dialog) unchanged. A screen that outgrows `setState`-and-`launch`
 moves up the levels — `ActionLogic` with keyed `Policy`s for overlapping work, phases with `whileIn`/`runOn`
 for exclusive modes, `Slice` for parts that change for different reasons — and the screen never notices.
-[`docs/mvi/guide.md`](../../../docs/mvi/guide.md) says when.
+[`mvi/guide.md`](../../../skills/arch-kit/references/mvi/guide.md) says when.
 
 ## The screen
 
@@ -262,18 +262,31 @@ assertEquals(listOf(HomeRoute, PostRoute("5")), navigator.stack)    // nav-kit's
 
 Time is the test's: `advance(millis)` moves it. `testStoreFactory()` is the real `StoreFactory` for a
 ViewModel under test, and `runViewModelTest` makes `Dispatchers.Main` — which `viewModelScope` runs on — the
-test's dispatcher. `StoreSettings(onError = …)` in a test collects the failures a logic lets escape; by default
+test's dispatcher. `testStoreFactory(onError = { … })` collects the failures a logic lets escape; by default
 a failure fails the test.
 
 ## Where things are
 
-| Package | Holds |
+`api` holds what a feature calls, implements or extends — a feature module depends on nothing else. `impl` holds
+what only a host needs: `StoreHost` (the class that runs a logic), `StoreFactoryImpl`, `StoreSettings` and
+`StoreObserver` (what the app's graph sets), and the Metro resolver.
+
+| Package (under `api`) | Holds |
 |---|---|
-| `store` | `Store`, `StoreScope` and its `setState`/`launch`/`observe`, `StoreOwner`, `StoreFactory`, `StoreSettings`, `StoreObserver`, `Partial` |
-| `logic` | `Logic`; `logic.action` — `ActionLogic`, `Policy`; `logic.phase` — `whileIn`, `runOn` |
-| `slice` | `Slice`, `Slot`, `Hosted` |
-| `keeper` | `StateKeeper`: a draft that survives the process being killed |
-| `compose` | `collectAsState`, `CollectEffects`, `select`, `ItemViewModels` |
-| `content`, `string`, `form` | `ContentState`, `UiString`, forms with validators and transformers |
-| `viewmodel` | `launch` for a ViewModel's own work, and `viewmodel.factory` — `createViewModel` and the resolver |
-| `composition` | `ComponentRenderer`, `ContributedLocals` |
+| `store` | `Store`, `StoreOwner`, `StoreFactory`, `ViewModel.store(…)` — what a screen sees and a ViewModel owns |
+| `store.scope` | `StoreScope` and what a logic does on it: `setState`, `launch`, `observe`, `whileSubscribed`, running a `FlowUseCase` |
+| `store.state` | `Partial`, `mapState` (the screen sees a mapped state) |
+| `store.keeper` | `StateKeeper`: a draft that survives the process being killed |
+| `logic` | `Logic` |
+| `logic.action` | `ActionLogic`, `Policy` — level 2 |
+| `logic.phase` | `whileIn`, `runOn`, `PhaseScope` — level 3 |
+| `logic.slice`, `logic.slot`, `logic.child` | `Slice`; `Slot` and `Hosted`; the child scope both use — level 4 and dialogs |
+| `compose.state` | `collectAsState`, `select` |
+| `compose.effect` | `CollectEffects`, `collectEffects` |
+| `compose.item` | `ItemViewModels`, `rememberItemViewModels`, `ItemScope` |
+| `content` | `ContentState` |
+| `string` | `UiString`, `StringLookup` |
+| `form.field`, `form.state`, `form.validator`, `form.transformer` | fields; `FormState`, `FormRule`, server errors; validators; input transformers |
+| `viewmodel.creation`, `.resolver`, `.assisted` | `createViewModel` and friends; the resolver contract; the assisted-factory marker |
+| `viewmodel.coroutine` | `ViewModel.launch` and uncaught-error reporting, for a ViewModel's own work |
+| `composition.renderer`, `composition.locals` | `ComponentRenderer`; `ContributedLocals` |

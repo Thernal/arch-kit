@@ -1,9 +1,7 @@
 package io.thernal.archkit.core.testing
 
-import io.thernal.archkit.core.presentation.api.keeper.StateKeeper
-import io.thernal.archkit.core.presentation.api.keeper.keeper
 import io.thernal.archkit.core.presentation.api.logic.Logic
-import io.thernal.archkit.core.presentation.api.logic.start
+import io.thernal.archkit.core.presentation.api.store.keeper.StateKeeper
 import kotlinx.coroutines.test.TestScope
 
 /**

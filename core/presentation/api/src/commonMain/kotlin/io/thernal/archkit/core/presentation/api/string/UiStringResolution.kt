@@ -1,6 +1,7 @@
 package io.thernal.archkit.core.presentation.api.string
 
 import androidx.compose.runtime.Composable
+import io.thernal.archkit.core.presentation.api.content.map
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 

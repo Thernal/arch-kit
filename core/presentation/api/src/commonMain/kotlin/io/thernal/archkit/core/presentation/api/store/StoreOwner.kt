@@ -1,8 +1,8 @@
 package io.thernal.archkit.core.presentation.api.store
 
 import io.thernal.archkit.core.presentation.api.logic.Logic
-import io.thernal.archkit.core.presentation.api.slice.Slice
-import io.thernal.archkit.core.presentation.api.slice.Slot
+import io.thernal.archkit.core.presentation.api.logic.slice.Slice
+import io.thernal.archkit.core.presentation.api.logic.slot.Slot
 
 /**
  * Something that owns a [Store] — usually a ViewModel. Named after Android's owners (`LifecycleOwner`,

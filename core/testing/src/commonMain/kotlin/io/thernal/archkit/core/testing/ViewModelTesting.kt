@@ -1,5 +1,6 @@
 package io.thernal.archkit.core.testing
 
+import io.thernal.archkit.core.presentation.api.logic.Logic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

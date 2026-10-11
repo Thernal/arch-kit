@@ -18,7 +18,7 @@ The rule survives in a different place. `setState`, `emit`, `launch` and `observ
 from a screen, a repository or a test body, and a logic needs no ViewModel to be tested, hosted as a
 `Slice` of a bigger screen, or opened as a `Slot` (a dialog). Four levels — direct changes, keyed
 actions (`ActionLogic` with `Policy`), phases (`whileIn`, `runOn`), slices — let a screen grow without its
-screen code changing; [`docs/mvi/`](../docs/mvi/README.md) has the rules for each move.
+screen code changing; [`skills/arch-kit/references/mvi/`](../skills/arch-kit/references/mvi/README.md) has the rules for each move.
 
 `StoreFactory` replaces the plugin registry as the one seam: it builds every store with the app's
 `StoreSettings`, so logging (`StoreObserver`), failure reporting and a test's fail-fast default change one
@@ -73,13 +73,18 @@ saw its subtypes. Here there is one shared flow and each observer filters by typ
 
 Each file holds one type, or one type and the composition local that installs it; a type's extensions get
 a file of their own beside it (`StoreScopeState.kt`, `ContentStateExtensions.kt`), so a contract reads without
-its helpers and a helper is found by name. Packages say what a part is for: `store` is what a screen sees and
-a logic acts on, `logic` is the levels, `slice` the parts of a screen, `keeper` the draft that survives the
-process, `compose` the screen's side. `api` holds contracts and everything a logic uses; `impl` holds what
-only a host needs — `StoreHost`, the one class that runs a logic — and the Metro resolver. The presentation
-modules are the presentation layer by name, so their packages start right under the module
-(`core.presentation.api.store`), never `core.presentation.api.presentation` — the layer Detekt rule reads
-the layer off the module name and reports a repeated one. `composition` holds what every feature builds
+its helpers and a helper is found by name. Packages say what a part is for, in two levels: the area
+(`store`, `logic`, `compose`, `form`, `viewmodel`) and, inside it, the role (`store.scope` is what a logic
+does on its store, `store.state` how a state is changed and mapped, `store.keeper` persistence;
+`logic.action`, `logic.phase`, `logic.slice`, `logic.slot` are the levels; `compose.state`, `compose.effect`
+and `compose.item` are the screen's three concerns). `api` holds what a feature calls, implements or extends
+— a feature module depends on nothing else — and `impl` what only a host needs: `StoreHost`, the one class
+that runs a logic, the `StoreSettings` and `StoreObserver` the app's graph sets, and the Metro resolver. A class
+a feature extends or constructs (`ActionLogic`, `Slice`, `Slot`) has to be in `api` with its machinery, because
+a feature cannot reach `impl`; Kotlin `internal` keeps that machinery (`ActionRunner`, `ChildScope`) out of
+sight. The presentation modules are the presentation layer by name, so their packages start right under the
+module (`core.presentation.api.store`), never `core.presentation.api.presentation` — the layer Detekt rule
+reads the layer off the module name and reports a repeated one. `composition` holds what every feature builds
 on — `ComponentRenderer` and `ContributedLocals`.
 
 `ViewModelResolver` is not a renderer: it draws nothing, it hands a composition its ViewModel. The

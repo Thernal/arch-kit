@@ -1,8 +1,8 @@
 package io.thernal.archkit.core.presentation.api.logic.action
 
 import io.thernal.archkit.core.presentation.api.logic.Logic
-import io.thernal.archkit.core.presentation.api.store.Partial
-import io.thernal.archkit.core.presentation.api.store.StoreScope
+import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
+import io.thernal.archkit.core.presentation.api.store.state.Partial
 
 /**
  * Level 2. An intent says what the user did; an action says what to do about it, with every parameter it

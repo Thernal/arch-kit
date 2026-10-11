@@ -1,7 +1,7 @@
 package io.thernal.archkit.core.presentation.api.logic.phase
 
-import io.thernal.archkit.core.presentation.api.store.Partial
-import io.thernal.archkit.core.presentation.api.store.StoreScope
+import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
+import io.thernal.archkit.core.presentation.api.store.state.Partial
 import kotlin.reflect.KClass
 
 /**
