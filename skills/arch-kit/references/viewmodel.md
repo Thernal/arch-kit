@@ -51,6 +51,8 @@ class HomeViewModel(storeFactory: StoreFactory, bus: EventBus, loadPosts: LoadPo
 ```
 
 - The ViewModel has one line of body. Behaviour — every `setState`, `launch`, `observe` — is in the logic.
+- The Metro annotations work when the graph sees this module. A feature's `impl` does not: bind the
+  ViewModel in its `wiring` instead ([setup](setup.md#graph)).
 - Intents run one at a time, in order, on the caller's thread: set the flag a second tap's guard reads
   (`isSending`) in the intent's synchronous part, before `launch`.
 - `safeCall` returns a `Result` whose failure is a reported `Failure`; each failure ends as a state or an

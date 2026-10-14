@@ -30,9 +30,12 @@ arch-kit` shows what moved upstream; offer `kit update arch-kit` rather than han
   outputs) and one **`Logic`** class that turns intents into states and effects. A logic is a plain class:
   dependencies through the constructor, no ViewModel, no Android, no Compose.
 - The ViewModel is `ViewModel(), StoreOwner<S, I, E>` with `override val store = store(storeFactory, State(),
-  Logic(...))` and nothing else.
+  Logic(...))` and nothing else. In a feature split into `api`/`impl`/`wiring`, it is bound in `wiring`
+  with `@Provides @IntoMap` ([references/setup.md](references/setup.md)); a `@ContributesIntoMap` in `impl` is silently lost.
 - Inside a logic (`StoreScope`): `setState { copy(…) }`, `state`, `emit(effect)`, `launch { }`,
   `observe(flow) { }`, `safeCall { }`. These exist only inside `onStart`/`onIntent`.
+- **Every logic's first line is `private typealias Scope = StoreScope<State, Effect>`**, and every
+  handler and helper is `Scope.…` — never the full `StoreScope<…>` repeated.
 - The screen: `createViewModel()`, `store.collectAsState()`, `store.postIntent(…)`, `store.CollectEffects { }`.
 - **Messages and navigation are not the kit's.** A feature's effect type declares them
   (`Message(UiString)`, `Navigation(process: Navigator.() -> Unit)`); its screen handles them.

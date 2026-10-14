@@ -35,7 +35,36 @@ interface AppGraph : ViewModelGraph {                       // declares metroVie
 }
 ```
 
-ViewModels: `@Inject @ViewModelKey(X::class) @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>()) class X(storeFactory: StoreFactory, …)` — the explicit `binding` because a ViewModel here also implements `StoreOwner`.
+ViewModels in the app's own module (the graph's module or one it depends on directly):
+`@Inject @ViewModelKey(X::class) @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>()) class X(storeFactory: StoreFactory, …)`
+— the explicit `binding` because a ViewModel here also implements `StoreOwner`.
+
+ViewModels of a feature split into `api`/`impl`/`wiring`: the app depends on `wiring`, and `impl` is
+`wiring`'s `implementation` dependency, so `impl` is not on the graph's compile classpath. Metro finds
+contributions on that classpath only: a `@ContributesIntoMap` in `impl` compiles and never reaches the map
+(the screen fails at runtime). Leave the class unannotated and bind it in `wiring`:
+
+```kotlin
+@BindingContainer
+@ContributesTo(AppScope::class)
+interface ProfileViewModelsModule {
+    companion object {
+        @Provides
+        @IntoMap
+        @ViewModelKey(ProfileViewModel::class)
+        fun provideProfileViewModel(storeFactory: StoreFactory): ViewModel {
+            return ProfileViewModel(storeFactory = storeFactory)
+        }
+
+        @Provides
+        @IntoMap
+        @ManualViewModelAssistedFactoryKey(PostViewModel.Factory::class)
+        fun providePostViewModelFactory(storeFactory: StoreFactory): ManualViewModelAssistedFactory {
+            return PostViewModel.Factory { id -> PostViewModel(id = id, storeFactory = storeFactory) }
+        }
+    }
+}
+```
 
 ## Root
 
