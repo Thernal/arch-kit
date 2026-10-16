@@ -404,8 +404,8 @@ storeTest(initial, logic) {
 
 One file per concern, named after the main type in it. A feature is a folder, and a folder is a package.
 In an app on the kits the `conventions` skill's presentation structure decides the files (a `contract/`
-package, `…View` and `…Content`, `mapper/<Screen>ComponentStateMappers.kt` and
-`<Screen>ComponentActionsMappers.kt`); the layout below is this guide's own.
+package, `…View` and `…Content`, `mapper/<Screen>StateMappers.kt` and
+`<Screen>CallbacksMappers.kt`); the layout below is this guide's own.
 
 ```
 report/                        a screen
@@ -413,7 +413,7 @@ report/                        a screen
   ReportLogic.kt               the logic
   ReportViewModel.kt           the ViewModel, one line
   ReportScreen.kt              route + stateless content
-  ReportComponentStateMappers.kt   only when the UI needs shapes of its own (toBodyUi())
+  ReportStateMappers.kt        only when the UI needs shapes of its own (toBodyUi())
 createpost/                    a screen made of slices
   CreatePostContract.kt  CreatePostLogic.kt  CreatePostViewModel.kt  CreatePostScreen.kt
   CreatePostKeeper.kt          what survives process death: the saved part and the keeper
@@ -433,7 +433,7 @@ data/                          models, and one file per repository and per fake
 | Logic | `ReportLogic` | `ReportLogic.kt` |
 | ViewModel | `ReportViewModel` | `ReportViewModel.kt` |
 | Screen | `ReportScreen` (route) and `ReportContent` (stateless) | `ReportScreen.kt` |
-| Mappers to component state | `toBodyUi()` | `CreatePostComponentStateMappers.kt` |
+| Mappers to component state | `toBodyUi()` | `CreatePostStateMappers.kt` |
 | A mapper from the logic's state to the screen's (`mapState`) | `SignInLevel1State.toUi()` | `SignInLevel1Mapper.kt` |
 | Slices | a subpackage each: `createpost/body/`, `createpost/poll/` | `BodyContract.kt`, `BodyLogic.kt` |
 | Tests | `ReportLogicTest` | `commonTest`, the same package and folder |
