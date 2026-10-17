@@ -70,7 +70,6 @@ class HomeViewModel(storeFactory: StoreFactory, bus: EventBus, loadPosts: LoadPo
 @Composable
 fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
     val store = viewModel.store
-    val state by store.collectAsState()
     store.CollectEffects { effect ->
         when (effect) {
             is HomeEffect.Share -> share(effect.url)
@@ -78,12 +77,13 @@ fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
             is HomeEffect.Navigation -> effect.process(navigator)
         }
     }
-    HomeContent(state = state, onRefresh = { store.postIntent(HomeIntent.Refresh) })
+    HomeContent(state = store.collectAsState(), onRefresh = { store.postIntent(HomeIntent.Refresh) })
 }
 ```
 
-Split the screen: a stateless `HomeContent(state, callbacks)` previews without a ViewModel.
-`state.select { it.part }` recomposes only for that part. `CollectEffects` runs only while the screen is
+Split the screen: a stateless `HomeContent(state, callbacks)` previews without a ViewModel. Neither unwraps the
+state — `val state by store.collectAsState()` would recompose the route on every change — and `HomeContent`
+hands each component `state.select { it.part }`, which recomposes only that component. `CollectEffects` runs only while the screen is
 `RESUMED`; its block is a `CoroutineScope` — suspend in it to queue effects, `launch` to not wait.
 
 ## Factories
