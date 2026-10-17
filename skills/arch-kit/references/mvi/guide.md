@@ -194,13 +194,24 @@ fun ReportScreen(
 
 @Composable
 private fun ReportContent(state: State<ReportState>, postIntent: (ReportIntent) -> Unit) {
-    val reason by state.select { it.reason }       // recomposes only when the reason changes
-    // …
+    Column {
+        ReportReasonPicker(
+            reason = state.select { it.reason },       // only the picker recomposes when the reason changes
+            onSelect = { postIntent(ReportIntent.SelectReason(it)) },
+        )
+        ReportSendButton(
+            canSend = state.select { it.canSend },
+            onSend = { postIntent(ReportIntent.Send) },
+        )
+    }
 }
 ```
 
 - Only this first composable, the route, sees the `Store`. Everything below it gets a `State` (narrowed with
   `select { }`) and a `postIntent` lambda, so it can be previewed and reused without a store.
+- `ReportContent` reads no state: it hands each component its part, and the component reads it where it draws.
+  Values that change together are one component; a part that never changes is never inside one that reads.
+- The lambdas are written in place, never wrapped in `remember`: the compiler memoizes them (strong skipping).
 - Effects are collected once, here, with `CollectEffects`.
 
 ### Step 5. Wiring it in
@@ -316,8 +327,10 @@ of an intent runs on the caller's thread, so a second thread would race it. A Vi
 
 15. **Only the route composable touches the `Store`.** Everything below it takes `State<…>` and a
     `postIntent` lambda.
-16. **Each component reads its part with `select { }`,** so it recomposes only when its part changes. When a
-    component needs a different shape, write a pure mapper (`toBodyUi()`) in the UI layer.
+16. **Each component reads its part with `select { }`,** so it recomposes only when its part changes — as long
+    as it draws nothing else. Values that change on one trigger are one component; a part that never changes
+    stays outside every component that reads state; the content composable reads none. When a component needs
+    a different shape, write a pure mapper (`toBodyUi()`) in the UI layer.
 
 ### Children (slices and slots)
 

@@ -117,8 +117,6 @@ for exclusive modes, `Slice` for parts that change for different reasons — and
 @Composable
 fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
     val store = viewModel.store
-    val state by store.collectAsState()
-    val posts by state.select { it.posts }                      // recomposes only when posts change
     store.CollectEffects { effect ->
         when (effect) {
             is HomeEffect.Share -> share(effect.url)
@@ -126,9 +124,17 @@ fun HomeScreen(viewModel: HomeViewModel = createViewModel()) {
             is HomeEffect.Navigation -> effect.process(navigator)
         }
     }
-    // store.postIntent(HomeIntent.Refresh) …
+    HomeContent(state = store.collectAsState(), onIntent = store::postIntent)
+}
+
+@Composable
+private fun HomeContent(state: State<HomeState>, onIntent: (HomeIntent) -> Unit) {
+    PostList(posts = state.select { it.posts })                 // only PostList recomposes when posts change
+    // a part that never changes stays outside PostList; onIntent(HomeIntent.Refresh) …
 }
 ```
+
+Nothing above a component unwraps the state: `select` narrows it, and the component reads it where it draws.
 
 `CollectEffects` hands each effect to the block once, while the screen is `RESUMED` (`minActiveState` changes
 that): an effect emitted while the screen is in the background, or while nothing collects, waits in the store

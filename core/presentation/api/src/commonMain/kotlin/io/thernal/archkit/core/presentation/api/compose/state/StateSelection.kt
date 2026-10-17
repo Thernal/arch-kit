@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 
 /**
  * One component's state, mapped from the screen's: the component recomposes only when its own part
- * changes. ArenaGo's mapper style — the screen's state stays the logic's, every component gets the shape
+ * changes, as long as it draws nothing that does not depend on that part. ArenaGo's mapper style — the screen's state stays the logic's, every component gets the shape
  * it draws, and a component that later gets its own ViewModel already has its own state.
  */
 @Composable
