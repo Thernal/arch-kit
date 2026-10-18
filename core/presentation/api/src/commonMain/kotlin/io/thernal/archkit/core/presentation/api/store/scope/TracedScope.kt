@@ -29,10 +29,8 @@ interface TracedScope<S, in E> : StoreScope<S, E> {
         parent: StoreTrace?,
     ): StoreTrace
 
-    /** This scope, doing the work of [trace]. */
     fun traced(trace: StoreTrace): TracedScope<S, E>
 
-    /** Runs [block] as the store's handling of [trace] ([handling]). */
     fun <T> handle(
         trace: StoreTrace,
         block: () -> T,

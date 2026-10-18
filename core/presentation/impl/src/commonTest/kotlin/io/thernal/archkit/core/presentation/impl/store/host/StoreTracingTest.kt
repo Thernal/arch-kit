@@ -183,7 +183,10 @@ class StoreTracingTest {
         }
 
         override fun StoreScope<Upload, Nothing>.onIntent(intent: String) {
-            setState { Upload.Sending(intent) }
+            setState {
+                check(intent != BROKEN) { "a partial that fails" }
+                Upload.Sending(intent)
+            }
         }
     }
 
@@ -361,6 +364,23 @@ class StoreTracingTest {
         assertEquals(TraceOrigin.Phase("Sending"), sent.trace.origin)
         assertEquals(entering, sent.trace.parent)
     }
+
+    @Test
+    fun aPartialThatFailsDoesNotBecomeTheChainThatEnteredThePhase() = runTest {
+        val recorder = Recorder()
+        val errors = mutableListOf<Throwable>()
+        val store = host(initialState = Upload.Idle, logic = Uploading(), recorder = recorder, errors = errors)
+
+        store.postIntent("photo")
+        store.postIntent(BROKEN)
+        advanceTimeBy(WORK_MILLIS * 2)
+
+        val sent = recorder.events
+            .filterIsInstance<StoreEvent.State>()
+            .single { event -> event.state == Upload.Sent }
+        assertEquals(TraceOrigin.Intent("photo"), sent.trace.parent?.origin)
+        assertEquals(listOf("a partial that fails"), errors.map { error -> error.message })
+    }
 }
 
 private const val WORK_MILLIS = 100L
@@ -368,3 +388,4 @@ private const val SLOW = 300L
 private const val FAST = 100L
 private const val KEY = "work"
 private const val OPEN = "open"
+private const val BROKEN = "broken"

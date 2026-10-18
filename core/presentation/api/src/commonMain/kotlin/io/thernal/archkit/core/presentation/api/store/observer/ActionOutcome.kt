@@ -2,7 +2,6 @@ package io.thernal.archkit.core.presentation.api.store.observer
 
 import kotlin.time.Duration
 
-/** What became of an action under its policy. */
 sealed interface ActionOutcome {
     /** `Queue`: another action with the key runs; this one starts after it. */
     data object Queued : ActionOutcome

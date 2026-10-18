@@ -99,7 +99,6 @@ fun <S : Any, T : S, E> StoreScope<S, E>.runOn(
     }
 }
 
-/** The scope a phase's work runs in: a chain of its own, under the chain whose change entered the phase. */
 private fun <S, E> StoreScope<S, E>.phaseWork(
     phase: KClass<*>,
     cause: StoreTrace?,

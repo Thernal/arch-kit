@@ -95,10 +95,9 @@ class StoreHost<S, I, E>(
     private val isObserved = settings.observers.isNotEmpty()
     private val traceIds = AtomicLong(0)
 
-    /** The chain handled on the store's thread now ([TracedScope.handling]). */
     private var handling: StoreTrace? = null
 
-    /** The chain of the last change of state ([TracedScope.stateTrace]); kept only while someone observes. */
+    /** Kept only while someone observes. */
     private var stateTrace: StoreTrace? = null
 
     private val coroutineScope = CoroutineScope(
@@ -163,10 +162,15 @@ class StoreHost<S, I, E>(
         stateTrace = trace
         var previous = mutableState.value
         var next = previous
-        mutableState.update { state ->
-            previous = state
-            next = partial.reduce(state)
-            next
+        try {
+            mutableState.update { state ->
+                previous = state
+                next = partial.reduce(state)
+                next
+            }
+        } catch (failure: Exception) {
+            stateTrace = before
+            throw failure
         }
         if (previous == next) {
             stateTrace = before
