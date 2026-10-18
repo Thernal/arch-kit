@@ -1,17 +1,21 @@
 package io.thernal.archkit.core.presentation.impl.store.host
 
 import io.thernal.archkit.core.presentation.api.logic.Logic
+import io.thernal.archkit.core.presentation.api.logic.action.Policy
 import io.thernal.archkit.core.presentation.api.store.Store
 import io.thernal.archkit.core.presentation.api.store.StoreOwner
 import io.thernal.archkit.core.presentation.api.store.keeper.StateKeeper
+import io.thernal.archkit.core.presentation.api.store.observer.ActionOutcome
+import io.thernal.archkit.core.presentation.api.store.observer.StoreEvent
+import io.thernal.archkit.core.presentation.api.store.observer.StoreName
+import io.thernal.archkit.core.presentation.api.store.observer.StoreTrace
+import io.thernal.archkit.core.presentation.api.store.observer.TraceOrigin
 import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
-import io.thernal.archkit.core.presentation.api.store.scope.launch
-import io.thernal.archkit.core.presentation.api.store.state.Partial
-import io.thernal.archkit.core.presentation.api.store.state.mapped
-import io.thernal.archkit.core.presentation.api.viewmodel.coroutine.launch
-import io.thernal.archkit.core.presentation.api.store.observer.StoreObserver
+import io.thernal.archkit.core.presentation.api.store.scope.TracedScope
 import io.thernal.archkit.core.presentation.api.store.settings.Start
 import io.thernal.archkit.core.presentation.api.store.settings.StoreSettings
+import io.thernal.archkit.core.presentation.api.store.state.Partial
+import io.thernal.archkit.core.presentation.api.store.state.mapped
 import io.thernal.archkit.core.presentation.impl.store.keeper.SavedStateKeeper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -20,7 +24,6 @@ import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +34,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 
 /**
  * Hosts a [Logic] on [scope]: owns the state, delivers the effects, and handles every intent on the
@@ -39,7 +46,11 @@ import kotlinx.coroutines.sync.Mutex
  *
  * With a [keeper], the state starts from what the keeper saved before the process died, and the part the
  * keeper keeps is saved again whenever it changes.
+ *
+ * Every intent, and the start, opens a chain of work ([StoreTrace]); the logic gets a scope of that chain,
+ * so whatever it reduces and emits, now or from work it launched, reaches the observers as that chain's.
  */
+@OptIn(ExperimentalAtomicApi::class)
 class StoreHost<S, I, E>(
     initialState: S,
     scope: CoroutineScope,
@@ -80,66 +91,26 @@ class StoreHost<S, I, E>(
         }
     }
 
-    private val storeScope = object : StoreScope<S, E> {
-        override val state: S get() = mutableState.value
-        override val states: Flow<S> get() = mutableState
-        override val subscribers: StateFlow<Int> get() = screens
+    private val name = StoreName(logic = logic::class.simpleName ?: "Logic", instance = instances.incrementAndFetch())
+    private val isObserved = settings.observers.isNotEmpty()
+    private val traceIds = AtomicLong(0)
 
-        override val coroutineScope: CoroutineScope = CoroutineScope(
-            scope.coroutineContext +
-                SupervisorJob(scope.coroutineContext[Job]) +
-                CoroutineExceptionHandler { _, error -> settings.onError(error) },
-        )
+    /** The chain handled on the store's thread now ([TracedScope.handling]). */
+    private var handling: StoreTrace? = null
 
-        override fun reduce(partial: Partial<S>) {
-            if (settings.observers.isEmpty()) {
-                mutableState.update(partial::reduce)
-                return
-            }
-            var previous = mutableState.value
-            var next = previous
-            mutableState.update { state ->
-                previous = state
-                next = partial.reduce(state)
-                next
-            }
-            if (previous != next) {
-                notify { onState(partial = partial, previous = previous, state = next) }
-            }
-        }
+    /** The chain of the last change of state ([TracedScope.stateTrace]); kept only while someone observes. */
+    private var stateTrace: StoreTrace? = null
 
-        override fun emit(effect: E) {
-            notify { onEffect(effect) }
-            effectChannel.trySend(effect)
-        }
-
-        override suspend fun <T> busy(block: suspend () -> T): T {
-            working.update { it + 1 }
-            try {
-                return block()
-            } finally {
-                working.update { it - 1 }
-            }
-        }
-    }
+    private val coroutineScope = CoroutineScope(
+        scope.coroutineContext +
+            SupervisorJob(scope.coroutineContext[Job]) +
+            CoroutineExceptionHandler { _, error -> settings.onError(error) },
+    )
 
     init {
-        kept?.let { saving -> storeScope.coroutineScope.launch { saving.save(states = mutableState) } }
+        kept?.let { saving -> coroutineScope.launch { saving.save(states = mutableState) } }
         if (settings.start == Start.Eagerly) {
             start()
-        }
-    }
-
-    /** Tells every observer; one that fails is reported, and the others still hear. */
-    private fun notify(event: StoreObserver.() -> Unit) {
-        settings.observers.forEach { observer ->
-            try {
-                observer.event()
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (error: Exception) {
-                settings.onError(error)
-            }
         }
     }
 
@@ -149,30 +120,114 @@ class StoreHost<S, I, E>(
             return
         }
         isStarted = true
-        try {
-            with(logic) { storeScope.onStart() }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: Exception) {
-            settings.onError(error)
-        }
+        handleLogic(open(origin = TraceOrigin.Start, parent = null)) { with(logic) { onStart() } }
     }
 
     override fun postIntent(intent: I) {
         startIfLazy()
-        notify { onIntent(intent) }
-        try {
-            with(logic) { storeScope.onIntent(intent) }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: Exception) {
-            settings.onError(error)
-        }
+        val trace = open(origin = TraceOrigin.Intent(intent), parent = null)
+        notify { StoreEvent.Intent(store = name, trace = trace, intent = intent) }
+        handleLogic(trace) { with(logic) { onIntent(intent) } }
     }
 
     private fun startIfLazy() {
         if (settings.start == Start.Lazily) {
             start()
+        }
+    }
+
+    /** Runs the logic's part of [trace] on the store's thread; a failure goes to `onError`. */
+    private fun handleLogic(
+        trace: StoreTrace,
+        block: StoreScope<S, E>.() -> Unit,
+    ) {
+        try {
+            handle(trace) { Scope(trace).block() }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            settings.onError(error)
+        }
+    }
+
+    private fun reduce(
+        partial: Partial<S>,
+        trace: StoreTrace,
+    ) {
+        if (!isObserved) {
+            mutableState.update(partial::reduce)
+            return
+        }
+        // Set before the update: a collector on an immediate dispatcher reads it while the update runs.
+        val before = stateTrace
+        stateTrace = trace
+        var previous = mutableState.value
+        var next = previous
+        mutableState.update { state ->
+            previous = state
+            next = partial.reduce(state)
+            next
+        }
+        if (previous == next) {
+            stateTrace = before
+        } else {
+            notify {
+                StoreEvent.State(store = name, trace = trace, partial = partial, previous = previous, state = next)
+            }
+        }
+    }
+
+    private fun emit(
+        effect: E,
+        trace: StoreTrace,
+    ) {
+        notify { StoreEvent.Effect(store = name, trace = trace, effect = effect) }
+        effectChannel.trySend(effect)
+    }
+
+    private suspend fun <T> busy(block: suspend () -> T): T {
+        working.update { it + 1 }
+        try {
+            return block()
+        } finally {
+            working.update { it - 1 }
+        }
+    }
+
+    private fun open(
+        origin: TraceOrigin,
+        parent: StoreTrace?,
+    ): StoreTrace {
+        return StoreTrace(id = traceIds.incrementAndFetch(), origin = origin, parent = parent)
+    }
+
+    private fun <T> handle(
+        trace: StoreTrace,
+        block: () -> T,
+    ): T {
+        val outer = handling
+        handling = trace
+        try {
+            return block()
+        } finally {
+            handling = outer
+        }
+    }
+
+    /** Tells every observer; one that fails is reported, and the others still hear. */
+    private fun notify(event: () -> StoreEvent) {
+        if (!isObserved) {
+            return
+        }
+        val happened = event()
+        settings.observers.forEach { observer ->
+            try {
+                observer.onEvent(happened)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                settings.onError(error)
+            }
         }
     }
 
@@ -192,4 +247,63 @@ class StoreHost<S, I, E>(
             }
         }
     }
+
+    /** The store as the work of one chain sees it: what it reduces and emits is that chain's. */
+    private inner class Scope(
+        override val trace: StoreTrace,
+    ) : TracedScope<S, E> {
+        override val state: S get() = mutableState.value
+        override val states: Flow<S> get() = mutableState
+        override val subscribers: StateFlow<Int> get() = screens
+        override val coroutineScope: CoroutineScope get() = this@StoreHost.coroutineScope
+        override val handling: StoreTrace? get() = this@StoreHost.handling
+        override val stateTrace: StoreTrace? get() = this@StoreHost.stateTrace
+
+        override fun reduce(partial: Partial<S>) {
+            this@StoreHost.reduce(partial = partial, trace = trace)
+        }
+
+        override fun emit(effect: E) {
+            this@StoreHost.emit(effect = effect, trace = trace)
+        }
+
+        override suspend fun <T> busy(block: suspend () -> T): T {
+            return this@StoreHost.busy(block)
+        }
+
+        override fun open(
+            origin: TraceOrigin,
+            parent: StoreTrace?,
+        ): StoreTrace {
+            return this@StoreHost.open(origin = origin, parent = parent)
+        }
+
+        override fun traced(trace: StoreTrace): TracedScope<S, E> {
+            return Scope(trace)
+        }
+
+        override fun <T> handle(
+            trace: StoreTrace,
+            block: () -> T,
+        ): T {
+            return this@StoreHost.handle(trace = trace, block = block)
+        }
+
+        override fun reportIntent(intent: Any?) {
+            notify { StoreEvent.Intent(store = name, trace = trace, intent = intent) }
+        }
+
+        override fun reportAction(
+            action: Any,
+            policy: Policy,
+            outcome: ActionOutcome,
+        ) {
+            notify {
+                StoreEvent.Action(store = name, trace = trace, action = action, policy = policy, outcome = outcome)
+            }
+        }
+    }
 }
+
+@OptIn(ExperimentalAtomicApi::class)
+private val instances = AtomicInt(0)

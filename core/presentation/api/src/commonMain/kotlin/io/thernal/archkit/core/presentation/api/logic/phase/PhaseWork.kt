@@ -1,7 +1,10 @@
 package io.thernal.archkit.core.presentation.api.logic.phase
 
 import io.thernal.archkit.core.presentation.api.content.map
+import io.thernal.archkit.core.presentation.api.store.observer.StoreTrace
+import io.thernal.archkit.core.presentation.api.store.observer.TraceOrigin
 import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
+import io.thernal.archkit.core.presentation.api.store.scope.TracedScope
 import io.thernal.archkit.core.presentation.api.store.scope.launch
 import io.thernal.archkit.core.presentation.api.store.scope.launchBinder
 import io.thernal.archkit.core.presentation.api.viewmodel.coroutine.launch
@@ -27,6 +30,9 @@ import kotlin.reflect.KClass
  *
  * Phases come from a `StateFlow`, so a phase left and entered again before the work's coroutine runs is
  * seen as never left.
+ *
+ * Each run of the work is a chain of its own for the store's observers ([TraceOrigin.Phase]), under the
+ * chain whose change it woke up to.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 fun <S : Any, T : S, E> StoreScope<S, E>.whileIn(
@@ -35,12 +41,13 @@ fun <S : Any, T : S, E> StoreScope<S, E>.whileIn(
     block: suspend PhaseScope<S, T, E>.(entered: T) -> Unit,
 ): Job {
     val store = this
+    val tracing = this as? TracedScope<S, E>
     return launchBinder {
         states
             .map { current ->
                 @Suppress("UNCHECKED_CAST")
                 if (phase.isInstance(current)) {
-                    Entered(value = current as T, key = key(current))
+                    Entered(value = current as T, key = key(current), cause = tracing?.stateTrace)
                 } else {
                     null
                 }
@@ -52,9 +59,10 @@ fun <S : Any, T : S, E> StoreScope<S, E>.whileIn(
                 }
             }.collectLatest { entered ->
                 if (entered != null) {
-                    store.busy {
+                    val work = store.phaseWork(phase = phase, cause = entered.cause)
+                    work.busy {
                         PhaseScope(
-                            store = store,
+                            store = work,
                             phase = phase,
                             entered = entered.value,
                         ).block(entered.value)
@@ -91,7 +99,18 @@ fun <S : Any, T : S, E> StoreScope<S, E>.runOn(
     }
 }
 
+/** The scope a phase's work runs in: a chain of its own, under the chain whose change entered the phase. */
+private fun <S, E> StoreScope<S, E>.phaseWork(
+    phase: KClass<*>,
+    cause: StoreTrace?,
+): StoreScope<S, E> {
+    val tracing = this as? TracedScope<S, E> ?: return this
+    val trace = tracing.open(origin = TraceOrigin.Phase(phase.simpleName ?: phase.toString()), parent = cause)
+    return tracing.traced(trace)
+}
+
 private class Entered<T>(
     val value: T,
     val key: Any?,
+    val cause: StoreTrace?,
 )

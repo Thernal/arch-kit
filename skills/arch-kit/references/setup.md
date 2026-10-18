@@ -89,6 +89,10 @@ FailureReporting.reporter = FailureReporter { error, isUnexpected -> crashes.rec
     override fun onState(partial: Partial<*>, previous: Any?, state: Any?) { console.log("$partial: $previous -> $state") }
     override fun onEffect(effect: Any?) { console.log("effect $effect") }
 }
+@Provides @IntoSet fun provideTraceObserver(): StoreObserver = object : StoreObserver {
+    // Each event with its store and chain; actions only reach onEvent.
+    override fun onEvent(event: StoreEvent) { console.log("${event.store} #${event.trace.id} $event", group = event.trace.id) }
+}
 ```
 
 A failure a logic lets escape goes to `FailureReporting`, and the store keeps working.
