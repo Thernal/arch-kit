@@ -35,6 +35,6 @@ abstract class ActionLogic<S, I, A : Any, E> : Logic<S, I, E> {
 
     /** Runs [action] as if an intent had produced it — for work the logic starts itself (on start, on a timer). */
     protected fun StoreScope<S, E>.dispatch(action: A) {
-        runner.run(scope = this, policy = policy(action)) { process(action) }
+        runner.run(scope = this, action = action, policy = policy(action)) { process(action) }
     }
 }

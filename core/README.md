@@ -40,6 +40,24 @@ snackbar host and the navigator are. The kit names no design system and no navig
 installed at the root. A navigation lambda is not comparable, so a test runs it on a navigator and asserts
 on the navigator's state.
 
+## An observer sees chains of work, not only events
+
+A log of intents, states and effects in the order they happen does not say which intent a late state belongs
+to: a search that answers after the next keystroke reads as the keystroke's. So the store opens a chain
+(`StoreTrace`) for every intent and for the start, and hands the logic a scope of that chain. The trace rides
+on the scope, not on the coroutine context: `reduce` and `emit` do not suspend, so they cannot read a context,
+while a coroutine the logic launches captures the scope it was launched from — its late `reduce` is still the
+intent's.
+
+A child's scope is created once, when it is attached or opened, so it cannot know who calls it. The store
+knows: it records the chain it handles on its thread (`TracedScope.handling`), and a slice's or a slot's intent
+joins that one. An effect a child sends up is handled in the child's chain, so the parent's handler, and a
+sibling it posts to, stay in it too.
+
+A phase's work is a chain of its own, since it outlives the intent that entered the phase and restarts with it.
+Its parent is the chain whose change of state the work woke up to. Phases come from a `StateFlow`, so when two
+changes land before the work's coroutine runs, that is the later one.
+
 ## Errors do not crash the screen
 
 A failure that escapes a logic — in an intent or in launched work — goes to the store's `onError`, which the

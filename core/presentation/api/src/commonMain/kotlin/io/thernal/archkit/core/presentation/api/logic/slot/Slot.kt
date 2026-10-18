@@ -4,6 +4,7 @@ import io.thernal.archkit.core.presentation.api.logic.Logic
 import io.thernal.archkit.core.presentation.api.logic.child.ChildScope
 import io.thernal.archkit.core.presentation.api.logic.slice.Slice
 import io.thernal.archkit.core.presentation.api.store.scope.StoreScope
+import io.thernal.archkit.core.presentation.api.store.scope.forHandled
 import io.thernal.archkit.core.presentation.api.store.state.Partial
 
 /**
@@ -37,10 +38,10 @@ class Slot<PS, PE, C, S : Any, I, E>(
         val parent = checkNotNull(parent) { "The slot is not attached: attach it in the parent's onStart" }
         close()
         val child = create(config)
-        parent.reduce(Partial { state -> state.set(child.initialState) })
+        parent.forHandled().reduce(Partial { state -> state.set(child.initialState) })
         val scope = ChildScope(parent = parent, get = get, set = set, onEffect = onEffect)
         active = child.logic to scope
-        with(child.logic) { scope.onStart() }
+        with(child.logic) { scope.starting().onStart() }
     }
 
     /** Cancels the child's work and removes its state. Nothing happens when it is closed already. */
@@ -48,12 +49,12 @@ class Slot<PS, PE, C, S : Any, I, E>(
         val (_, scope) = active ?: return
         active = null
         scope.close()
-        parent?.reduce(Partial { state -> state.set(null) })
+        parent?.forHandled()?.reduce(Partial { state -> state.set(null) })
     }
 
     /** Goes to the open child; dropped when none is open — an intent from a sheet that is closing. */
     fun postIntent(intent: I) {
         val (logic, scope) = active ?: return
-        with(logic) { scope.onIntent(intent) }
+        with(logic) { scope.receive(intent).onIntent(intent) }
     }
 }

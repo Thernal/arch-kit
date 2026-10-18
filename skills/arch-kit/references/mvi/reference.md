@@ -73,11 +73,16 @@ These are set once for the app, in the `StoreFactory` its DI provides (`Presenta
 - `onError` gets every failure, in an intent or in launched work. By default it **throws**: in tests a bug
   fails the test (`testStoreFactory()` keeps the default). The kit's wiring sets one that reports the failure
   to `FailureReporting`, and the store then keeps working.
-- `observers` is a list of `StoreObserver`. Each sees every intent, every change of state (with the `Partial`
-  that made it), and every effect, in the order of the list; one that fails is reported to `onError` and the
-  others still hear. They are the hook for debug logs and analytics, and the test DSL is built on one. Named
-  partials make the logs readable: `SearchPartial.Results`, not `<lambda>`. A test builds its own settings, so
-  an app's observers do not run in it.
+- `observers` is a list of `StoreObserver`. Each sees every intent, every action and what became of it, every
+  change of state (with the `Partial` that made it), and every effect, in the order of the list; one that
+  fails is reported to `onError` and the others still hear. They are the hook for debug logs and analytics,
+  and the test DSL is built on one. `onEvent(StoreEvent)` gives each event its store (`StoreName`,
+  `OnboardingLogic#3`) and its chain (`StoreTrace`): an intent opens one and everything it causes, also from
+  launched work, is in it; the start is one; each run of a `whileIn` is one under the chain that entered the
+  phase; a slice's or a slot's intent joins the chain that posted it, its changes as a `ChildPartial`. The
+  default `onEvent` calls `onIntent`, `onState` and `onEffect`, so an observer overrides whichever it needs.
+  Named partials make the logs readable: `SearchPartial.Results`, not `<lambda>`. A test builds its own
+  settings, so an app's observers do not run in it.
 
 ### Threading and ordering
 

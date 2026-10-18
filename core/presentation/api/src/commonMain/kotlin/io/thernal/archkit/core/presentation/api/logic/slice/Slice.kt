@@ -33,7 +33,7 @@ class Slice<PS, PE, S, I, E>(
         check(scope == null) { "The slice is attached already" }
         val child = ChildScope(parent = parent, get = get, set = set, onEffect = onEffect)
         scope = child
-        with(logic) { child.onStart() }
+        with(logic) { child.starting().onStart() }
     }
 
     /** Cancels the slice's work. Its part of the state stays as it was. */
@@ -44,6 +44,6 @@ class Slice<PS, PE, S, I, E>(
 
     fun postIntent(intent: I) {
         val scope = checkNotNull(scope) { "The slice is not attached: attach it in the parent's onStart" }
-        with(logic) { scope.onIntent(intent) }
+        with(logic) { scope.receive(intent).onIntent(intent) }
     }
 }

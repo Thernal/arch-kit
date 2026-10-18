@@ -43,7 +43,17 @@ fun AppRoot(graph: AppGraph) {
 
 `PresentationProvidersModule` contributes the `StoreFactory` every ViewModel takes. Failures that escape a
 logic go to `FailureReporting`; contribute a `StoreObserver` into the graph's set (`@Provides @IntoSet`) to see
-every intent, state change and effect — a debug console, analytics.
+every intent, action, state change and effect — a debug console, analytics.
+
+An observer overrides `onEvent(StoreEvent)` to see each of them with its context, or only `onIntent`,
+`onState` and `onEffect`. An event names its store (`StoreName`: the logic's class and a number per store,
+`OnboardingLogic#3`) and the chain of work it belongs to (`StoreTrace`). Every intent opens a chain, and what
+it causes is that chain's: the action and what became of it under its policy (`ActionOutcome`: started,
+queued, dropped, cancelled, finished or failed, with how long it ran), the states its work reduces and the
+effects it emits — also from a coroutine that finishes after the next intent. The start is a chain of its own
+(`TraceOrigin.Start`), and so is each run of a `whileIn` (`TraceOrigin.Phase`), whose `parent` is the chain
+that entered the phase. A slice's or a slot's intent joins the chain that posted it, and its changes arrive
+as a `ChildPartial` that names the child's own partial.
 
 The kit installs nothing for messages or navigation. A snackbar host and a navigator are the screen's, or the
 app's own composition locals: see [Messages and navigation](#messages-and-navigation).
@@ -280,14 +290,14 @@ a test or a feature writes or configures — `StoreSettings`, `StoreObserver`, `
 | Package (under `api`) | Holds |
 |---|---|
 | `store` | `Store`, `StoreOwner`, `StoreFactory`, `ViewModel.store(…)` — what a screen sees and a ViewModel owns |
-| `store.scope` | `StoreScope` and what a logic does on it: `setState`, `launch`, `observe`, `whileSubscribed`, running a `FlowUseCase` |
+| `store.scope` | `StoreScope` and what a logic does on it: `setState`, `launch`, `observe`, `whileSubscribed`, running a `FlowUseCase`; `TracedScope`, the store's own (a logic never needs it) |
 | `store.state` | `Partial`, `mapState` (the screen sees a mapped state) |
 | `store.keeper` | `StateKeeper` — an opaque token for a draft that survives the process being killed; `StoreFactory.keeper(handle, …)` builds it, the host saves and restores |
-| `store.settings`, `store.observer` | `StoreSettings` (`start`, `onError`, `observers`), `Start`; `StoreObserver` — what an app's graph or a test sets and implements |
+| `store.settings`, `store.observer` | `StoreSettings` (`start`, `onError`, `observers`), `Start`; `StoreObserver` and the `StoreEvent` it sees, with `StoreName`, `StoreTrace`, `TraceOrigin`, `ActionOutcome` — what an app's graph or a test sets and implements |
 | `logic` | `Logic` |
 | `logic.action` | `ActionLogic`, `Policy` — level 2 |
 | `logic.phase` | `whileIn`, `runOn`, `PhaseScope` — level 3 |
-| `logic.slice`, `logic.slot`, `logic.child` | `Slice`; `Slot` and `Hosted`; the child scope both use — level 4 and dialogs |
+| `logic.slice`, `logic.slot`, `logic.child` | `Slice`; `Slot` and `Hosted`; the child scope both use and `ChildPartial` — level 4 and dialogs |
 | `compose.state` | `collectAsState`, `select` |
 | `compose.effect` | `CollectEffects`, `collectEffects` |
 | `compose.item` | `ItemViewModels`, `rememberItemViewModels`, `ItemScope` |
