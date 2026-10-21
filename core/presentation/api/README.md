@@ -216,19 +216,27 @@ loaded part of a screen: a profile's header and its posts load, fail and retry o
 `Dynamic("…")`, `Resource(Res.string.x, args)` (Compose Resources), `Localized(key, fallback)`,
 `Composite(parts, separator)`. `"text".ui()`, `Res.string.x.ui(args)`. Resolve in Compose with
 `uiString.resolve()`, outside it with `uiString.load(lookup)` (suspending). An app with key-based translations installs `LocalStringLookup`; the kit's validator
-messages are keys `validation.required`, `validation.email`, `validation.password`, `validation.min_length`,
-`validation.username`, `validation.repeat`, and failures resolve `failure.<status error>` /
-`field_error.<error>`, each with an English fallback.
+messages are keys `validation.required`, `validation.min_length`, `validation.repeat`, and failures resolve
+`failure.<status error>` / `field_error.<error>`, each with an English fallback.
 
 ## Forms
 
 ```kotlin
 data class SignUpState(
     val email: TextFormField = textFormField(validator = RequiredStringValidator() + EmailValidator()),
-    val password: TextFormField = textFormField(validator = PasswordValidator()),
+    val password: TextFormField = textFormField(validator = MinLengthValidator(min = 8)),
     val repeat: TextFormField = textFormField(),
 ) : FormState {
     override val fields get() = listOf(email, password, repeat)
+}
+
+// The app's own: what a valid e-mail, password or username is, and what it says, is the product's.
+class EmailValidator(
+    private val message: UiString = Res.string.validation_email.ui(),
+) : FieldValidator<TextFieldValue> {
+    override fun validate(value: TextFieldValue): UiString? {
+        return message.takeUnless { EMAIL.matches(value.text.trim()) }
+    }
 }
 
 val passwordsMatch = FormRule<SignUpState> { form ->
@@ -246,9 +254,9 @@ val (form, unshown) = state.withServerErrors(failure.errors, mapOf("email" to { 
 ```
 
 `FormField.update` clears the error (the user is fixing it); `validate` runs the validator; `withError` sets
-one. Validators: `RequiredValidator`, `RequiredStringValidator`, `MinLengthValidator`, `EmailValidator`,
-`PasswordValidator`, `UsernameValidator`, `RepeatValidator`; transformers: `MaxLengthTransformer`,
-`TrimStartTransformer`, `FilterTransformer`.
+one. Validators: `RequiredValidator`, `RequiredStringValidator`, `MinLengthValidator`, `RepeatValidator` — none
+holds a product's rule; an e-mail's, a password's or a username's is the app's own `FieldValidator`, as above.
+Transformers: `MaxLengthTransformer`, `TrimStartTransformer`, `FilterTransformer`.
 
 ## Testing
 

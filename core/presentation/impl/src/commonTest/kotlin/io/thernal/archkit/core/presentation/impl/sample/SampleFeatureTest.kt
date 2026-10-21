@@ -19,8 +19,8 @@ import io.thernal.archkit.core.presentation.api.form.state.FormRule
 import io.thernal.archkit.core.presentation.api.form.state.FormState
 import io.thernal.archkit.core.presentation.api.form.state.validate
 import io.thernal.archkit.core.presentation.api.form.state.withServerErrors
-import io.thernal.archkit.core.presentation.api.form.validator.EmailValidator
-import io.thernal.archkit.core.presentation.api.form.validator.PasswordValidator
+import io.thernal.archkit.core.presentation.api.form.validator.FieldValidator
+import io.thernal.archkit.core.presentation.api.form.validator.MinLengthValidator
 import io.thernal.archkit.core.presentation.api.form.validator.RequiredStringValidator
 import io.thernal.archkit.core.presentation.api.form.validator.plus
 import io.thernal.archkit.core.presentation.api.logic.Logic
@@ -63,9 +63,14 @@ private class Router {
 
 private data object ProfileSaved : BaseEvent
 
+// A product's rule is the app's own validator: the kit ships none for an e-mail, a password or a username.
+private val emailValidator = FieldValidator<TextFieldValue> { value ->
+    UiString.Dynamic("Enter a valid email").takeUnless { '@' in value.text }
+}
+
 private data class SignUpState(
-    val email: TextFormField = textFormField(validator = RequiredStringValidator() + EmailValidator()),
-    val password: TextFormField = textFormField(validator = PasswordValidator()),
+    val email: TextFormField = textFormField(validator = RequiredStringValidator() + emailValidator),
+    val password: TextFormField = textFormField(validator = MinLengthValidator(min = 8)),
     val repeat: TextFormField = textFormField(),
     val profile: ContentState<String> = ContentState.Idle,
     val savedElsewhere: Int = 0,
